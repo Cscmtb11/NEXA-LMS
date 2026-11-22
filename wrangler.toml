@@ -10,7 +10,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "al-jawahira-db"
-database_id = "al-jawahira-db-prod"
+database_id = "320d7c4b-8b92-4eb0-88be-ea13f54a8e9b"
 migrations_dir = "migrations"
 
 [observability]
