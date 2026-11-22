@@ -217,6 +217,13 @@
       </div>
 
       <div class="flex items-center gap-2.5">
+        <!-- Multi-Tenant Organization Switcher -->
+        <button onclick="openTenantModal()" id="btn-tenant-switcher" title="Switch or Provision Clinic Organization" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+          <i data-lucide="building-2" class="w-4 h-4 text-brand-400"></i>
+          <span id="topbar-tenant-display" class="max-w-[140px] truncate">Al-Jawahira</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] bg-brand-500/30 text-brand-300 font-mono font-bold">SAAS</span>
+        </button>
+
         <button onclick="switchTab('intake')" class="px-3 py-2 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs flex items-center gap-1.5 border border-brand-200 transition">
           <i data-lucide="plus-circle" class="w-4 h-4"></i>
           <span class="hidden md:inline">New Patient</span>
@@ -1685,17 +1692,127 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- MULTI-TENANT SAAS ORGANIZATION MODAL       -->
+  <!-- ========================================== -->
+  <div id="tenantModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+            <i data-lucide="building-2" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Multi-Tenant Clinic Workspaces</h3>
+            <p class="text-xs text-slate-500">Switch active clinic organization or provision a new diagnostic facility</p>
+          </div>
+        </div>
+        <button onclick="closeTenantModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- Active Organization Status Card -->
+      <div class="p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
+        <div class="space-y-0.5">
+          <span class="text-[10px] font-mono text-brand-300 font-bold uppercase tracking-wider">Active Workspace</span>
+          <h4 id="tenant-modal-current-name" class="text-base font-bold text-white">Al-Jawahira Neuro Workstation</h4>
+          <p id="tenant-modal-current-meta" class="text-xs text-slate-400 font-mono">Tenant ID: default • Plan: ENTERPRISE</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">LIVE D1 ISOLATED</span>
+      </div>
+
+      <!-- Quick Switch Registered Clinic -->
+      <div class="space-y-2">
+        <label class="block text-xs font-bold text-slate-700">Switch Active Clinic Organization</label>
+        <div class="flex items-center gap-2">
+          <select id="tenant-select-dropdown" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none"></select>
+          <button onclick="handleSwitchTenant()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow transition">Switch</button>
+        </div>
+      </div>
+
+      <!-- Provision New Clinic Form -->
+      <div class="pt-4 border-t border-slate-100 space-y-3">
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-900">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-brand-600"></i>
+          <span>Provision New Diagnostic Clinic (New Tenant)</span>
+        </div>
+        <form id="tenantForm" onsubmit="handleCreateTenant(event)" class="space-y-3 text-xs">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Clinic / Facility Name *</label>
+              <input type="text" id="newtenant-name" required placeholder="Valley Advanced Neuro Lab" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Unique Tenant Slug *</label>
+              <input type="text" id="newtenant-slug" required placeholder="valley-neuro" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Parent Entity</label>
+              <input type="text" id="newtenant-parent" placeholder="Valley Healthcare Pvt Ltd" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">SaaS Service Tier</label>
+              <select id="newtenant-plan" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-800">
+                <option value="PRO">PRO Tier (Unlimited Patients)</option>
+                <option value="ENTERPRISE">ENTERPRISE (Multi-Specialty)</option>
+                <option value="STARTER">STARTER Tier</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Clinic Address</label>
+              <input type="text" id="newtenant-address" placeholder="Hospital Road, Anantnag" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Contact Phone</label>
+              <input type="text" id="newtenant-phones" placeholder="+91-7006000000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono" />
+            </div>
+          </div>
+          <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 space-y-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 block">Initial Clinic Administrator Credentials</span>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Admin Name</label>
+                <input type="text" id="newtenant-admin-name" placeholder="Dr. Director" class="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Admin Username</label>
+                <input type="text" id="newtenant-admin-user" placeholder="admin.valley" class="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs font-mono" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Password</label>
+                <input type="password" id="newtenant-admin-pass" placeholder="Admin@123" class="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs font-mono" />
+              </div>
+            </div>
+          </div>
+          <div class="pt-2 flex items-center justify-end gap-2">
+            <button type="button" onclick="closeTenantModal()" class="px-4 py-2 rounded-xl bg-slate-100 font-bold text-slate-700">Cancel</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center gap-1.5 shadow">
+              <i data-lucide="plus" class="w-4 h-4"></i> Provision Organization
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
   <!-- APPLICATION JAVASCRIPT ENGINE              -->
   <!-- ========================================== -->
   <script>
-    const STORAGE_KEY = 'AL_JAWAHIRA_NEXA_LMIS_V5_1';
+    const STORAGE_KEY = 'NEXA_LMIS_SAAS_V6';
 
     const DEFAULT_STATE = {
-      activeTab: 'dashboard',
-      selectedPatientForReport: 'P001',
+      activeTab: 'intake',
+      selectedPatientForReport: null,
+      activeTenantId: 'default',
+      tenants: [
+        { id: 'default', name: 'Al-Jawahira Neuro Workstation', slug: 'al-jawahira', plan: 'ENTERPRISE' }
+      ],
       settings: {
-        facilityName: 'AL JAWAHIRA ELECTROPHYSIOLOGY',
-        parentEntity: 'SpringNexa Private Limited',
+        facilityName: 'Al-Jawahira Electrophysiology',
+        parentEntity: 'Nexa-LMIS Enterprise Network',
         cin: 'U86900JK2026PTC018519',
         dpiit: 'DIPP238776',
         address: 'Near Gousia Pharmacy District Hospital Road Kulgam',
@@ -1711,15 +1828,6 @@
           regNo: 'JKMC-REG-2026',
           department: 'Department of Clinical Neurophysiology',
           signatureUrl: ''
-        },
-        {
-          id: 'DOC2',
-          name: 'Dr. Showkat Ahmad Mir',
-          designation: 'Consultant Neurophysiologist',
-          qualification: 'DM Neurology, MBBS',
-          regNo: 'JKMC-REG-2021',
-          department: 'Department of Neurology',
-          signatureUrl: ''
         }
       ],
       tariffs: {
@@ -1730,116 +1838,54 @@
         VEP:  { code: 'VEP',  name: 'Visual Evoked Potential (Pattern Reversal)',  fee: 1500, docShare: 600,  refShare: 200 },
         BERA: { code: 'BERA', name: 'Brainstem Evoked Response Audiometry',       fee: 2500, docShare: 1000, refShare: 300 }
       },
-      patients: [
-        {
-          id: 'P001',
-          token: '1369',
-          date: '2026-11-05',
-          name: 'Hanan Qadir',
-          age: 29,
-          gender: 'Male',
-          phone: '7006318286',
-          refDoctor: 'District Hospital Kulgam',
-          reportingDoctor: 'Dr. Rayees Ahmad Tarray',
-          modality: 'NCV',
-          fee: 2500,
-          docShare: 1000,
-          refShare: 300,
-          netLab: 1200,
-          payMode: 'UPI / QR',
-          indication: 'Numbness and paresthesia in left 4th and 5th fingers',
-          reportTitle: 'NERVE CONDUCTION STUDIES REPORT',
-          motorSampled: 'Bilateral Median and Ulnar nerves.',
-          sensorySampled: 'Bilateral Median and Ulnar nerves.',
-          motorFindings: 'Normal DML, CMAP and CV.',
-          sensoryFindings: 'Left Ulnar: Decreased Amplitude with Normal Latency and CV\nBilateral Median and Right Ulnar: Normal Latency, Amplitude and CV.',
-          fwavesFindings: 'Normal minimum Latencies.',
-          impression: 'EPS of sampled nerves is Suggestive of Left Ulnar sensory Neuropathy.'
-        },
-        {
-          id: 'P002',
-          token: '1370',
-          date: '2026-11-06',
-          name: 'Mohsina Akhter',
-          age: 34,
-          gender: 'Female',
-          phone: '6006220236',
-          refDoctor: 'Dr. Rayees Ahmad Tarray',
-          reportingDoctor: 'Dr. Rayees Ahmad Tarray',
-          modality: 'NCV',
-          fee: 2500,
-          docShare: 1000,
-          refShare: 300,
-          netLab: 1200,
-          payMode: 'Cash',
-          indication: 'Routine upper limb screening',
-          reportTitle: 'NERVE CONDUCTION STUDIES REPORT',
-          motorSampled: 'Bilateral Median and Ulnar nerves.',
-          sensorySampled: 'Bilateral Median and Ulnar nerves.',
-          motorFindings: 'Normal DML, CMAP and CV.',
-          sensoryFindings: 'Normal Latency, Amplitude and CV.',
-          fwavesFindings: 'Normal minimum Latencies.',
-          impression: 'EPS of sampled nerves is Within Normal Limits.'
-        },
-        {
-          id: 'P003',
-          token: '1371',
-          date: '2026-11-07',
-          name: 'Bilal Ahmad Wani',
-          age: 42,
-          gender: 'Male',
-          phone: '7006112233',
-          refDoctor: 'District Hospital Kulgam',
-          reportingDoctor: 'Dr. Showkat Ahmad Mir',
-          modality: 'EEG',
-          fee: 2000,
-          docShare: 800,
-          refShare: 250,
-          netLab: 950,
-          payMode: 'Cash',
-          indication: 'Episodic loss of consciousness and seizure screening',
-          reportTitle: 'ROUTINE VIDEO ELECTROENCEPHALOGRAPHY REPORT',
-          motorSampled: 'Standard 10-20 Electrode Placement.',
-          sensorySampled: 'Bipolar and Referential Montages.',
-          motorFindings: 'Symmetric background alpha activity 9-10 Hz.',
-          sensoryFindings: 'No focal slowing or epileptiform discharges.',
-          fwavesFindings: 'Normal photic driving response.',
-          impression: 'Routine Interictal EEG is Within Normal Limits.'
-        }
-      ],
-      ledgerEntries: [
-        { id: 'L1', doctorName: 'Dr. Rayees Ahmad Tarray', type: 'opening', date: 'AY 2024-25', desc: 'Legacy Carried Forward Liability', amount: 142800 },
-        { id: 'L2', doctorName: 'Dr. Rayees Ahmad Tarray', type: 'payout', date: '06-11-2026', desc: 'Bank Settlement Transfer', amount: 48000 }
-      ],
-      referralPartners: [
-        { id: 'RP1', name: 'District Hospital Kulgam', type: 'Govt Hospital', tier: 1.0 },
-        { id: 'RP2', name: 'Gousia Hospital Kulgam', type: 'Private Hospital', tier: 1.0 },
-        { id: 'RP3', name: 'Gousia Pharmacy Kulgam', type: 'Local Pharmacy Partner', tier: 1.25 },
-        { id: 'RP4', name: 'Dr. Rayees Ahmad Tarray', type: 'Consultant / Referring', tier: 1.0 }
-      ],
-      referralPayouts: [
-        { id: 'RFP1', date: '2026-11-05', partner: 'District Hospital Kulgam', amount: 150, mode: 'Cash' }
-      ],
-      expenses: [
-        { id: 'E1', category: 'Debt Servicing', name: 'Bike EMI', amount: 3000 },
-        { id: 'E2', category: 'Debt Servicing', name: 'Mobile EMI', amount: 1088 },
-        { id: 'E3', category: 'Operations', name: 'Bike Oil / Fuel', amount: 1500 },
-        { id: 'E4', category: 'Utilities', name: 'Bill LL-Power / Electricity', amount: 500 },
-        { id: 'E5', category: 'Operations', name: 'Misc Lab Expenses', amount: 737 },
-        { id: 'E6', category: 'Consumables', name: 'Medical Electrodes / Gel', amount: 500 },
-        { id: 'E7', category: 'Facility', name: 'Home / Lab Misc Overheads', amount: 3000 },
-        { id: 'E8', category: 'Telecom', name: 'Phone & Internet Recharge', amount: 300 }
-      ]
+      patients: [],
+      ledgerEntries: [],
+      referralPartners: [],
+      referralPayouts: [],
+      expenses: []
     };
 
     let appState = loadState();
     let qrCodeInstance = null;
     let d1Connected = false;
 
+    // ==========================================
+    // USER AUTHENTICATION & SESSION MANAGEMENT
+    // ==========================================
+    const AUTH_TOKEN_KEY = 'NEXA_LMIS_AUTH_TOKEN_V1';
+    const AUTH_USER_KEY = 'NEXA_LMIS_AUTH_USER_V1';
+
+    let currentAuthUser = null;
+    let currentAuthToken = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    try {
+      currentAuthUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY));
+    } catch (e) {
+      currentAuthUser = null;
+    }
+
+    function getAuthHeaders(extraHeaders = {}) {
+      const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+      if (currentAuthToken) {
+        headers['Authorization'] = 'Bearer ' + currentAuthToken;
+      }
+      if (appState && appState.activeTenantId) {
+        headers['X-Tenant-ID'] = appState.activeTenantId;
+      }
+      return headers;
+    }
+
     function loadState() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return JSON.parse(JSON.stringify(DEFAULT_STATE));
-      try { return JSON.parse(saved); } catch (e) { return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
+      try {
+        const parsed = JSON.parse(saved);
+        if (!parsed.activeTenantId) parsed.activeTenantId = 'default';
+        if (!parsed.tenants || !parsed.tenants.length) parsed.tenants = DEFAULT_STATE.tenants;
+        return parsed;
+      } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_STATE));
+      }
     }
 
     function saveState() {
@@ -1883,8 +1929,11 @@
     async function syncWithCloudflareD1() {
       setCloudStatus('syncing', 'Connecting D1...');
       try {
-        const res = await fetch('/api/state');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const tenantQuery = appState.activeTenantId ? ('?tenant_id=' + encodeURIComponent(appState.activeTenantId)) : '';
+        const res = await fetch('/api/state' + tenantQuery, {
+          headers: getAuthHeaders()
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (data.ok && data.state) {
           const remote = data.state;
@@ -1899,7 +1948,7 @@
 
           saveState();
           setCloudStatus('connected', 'Cloudflare D1 Online');
-          showToast('Synchronized successfully with Cloudflare D1 SQLite database!');
+          showToast('Synchronized with D1 [' + (appState.activeTenantId || 'default') + ']!');
           refreshAllViews();
           return;
         }
@@ -1909,12 +1958,136 @@
       }
     }
 
+    // ==========================================
+    // MULTI-TENANT WORKSPACE MANAGEMENT
+    // ==========================================
+    async function loadTenantsList() {
+      try {
+        const res = await fetch('/api/tenants', { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.tenants)) {
+          appState.tenants = data.tenants;
+          saveState();
+        }
+      } catch (e) {
+        console.warn('Could not refresh tenants list from D1', e);
+      }
+      updateTenantUI();
+    }
+
+    function updateTenantUI() {
+      const currentId = appState.activeTenantId || 'default';
+      const activeTenant = (appState.tenants || []).find(t => t.id === currentId) || {
+        id: currentId,
+        name: appState.settings?.facilityName || 'Al-Jawahira Neuro Workstation',
+        slug: 'al-jawahira',
+        plan: 'ENTERPRISE'
+      };
+
+      const topbarDisplay = document.getElementById('topbar-tenant-display');
+      if (topbarDisplay) {
+        topbarDisplay.innerText = activeTenant.name || 'Al-Jawahira';
+      }
+
+      const modalCurrentName = document.getElementById('tenant-modal-current-name');
+      if (modalCurrentName) {
+        modalCurrentName.innerText = activeTenant.name || 'Al-Jawahira Neuro Workstation';
+      }
+
+      const modalCurrentMeta = document.getElementById('tenant-modal-current-meta');
+      if (modalCurrentMeta) {
+        modalCurrentMeta.innerText = 'Tenant ID: ' + activeTenant.id + ' • Slug: ' + (activeTenant.slug || activeTenant.id) + ' • Plan: ' + (activeTenant.plan || 'PRO');
+      }
+
+      const selectDropdown = document.getElementById('tenant-select-dropdown');
+      if (selectDropdown) {
+        const list = (appState.tenants && appState.tenants.length) ? appState.tenants : [activeTenant];
+        selectDropdown.innerHTML = list.map(t => '<option value="' + t.id + '" ' + (t.id === currentId ? 'selected' : '') + '>' + t.name + ' (' + (t.plan || 'PRO') + ') - [' + (t.slug || t.id) + ']</option>').join('');
+      }
+    }
+
+    function openTenantModal() {
+      const modal = document.getElementById('tenantModal');
+      if (modal) modal.classList.remove('hidden');
+      loadTenantsList();
+    }
+
+    function closeTenantModal() {
+      const modal = document.getElementById('tenantModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function handleSwitchTenant() {
+      const select = document.getElementById('tenant-select-dropdown');
+      if (!select) return;
+      const targetId = select.value;
+      if (!targetId) return;
+
+      appState.activeTenantId = targetId;
+      saveState();
+      updateTenantUI();
+      closeTenantModal();
+      showToast('Switched workspace to organization tenant: ' + targetId);
+      await syncWithCloudflareD1();
+      refreshAllViews();
+    }
+
+    async function handleCreateTenant(e) {
+      if (e) e.preventDefault();
+      const name = document.getElementById('newtenant-name').value.trim();
+      const slug = document.getElementById('newtenant-slug').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const parent = document.getElementById('newtenant-parent').value.trim();
+      const plan = document.getElementById('newtenant-plan').value;
+      const address = document.getElementById('newtenant-address').value.trim();
+      const phones = document.getElementById('newtenant-phones').value.trim();
+      const adminName = document.getElementById('newtenant-admin-name').value.trim();
+      const adminUser = document.getElementById('newtenant-admin-user').value.trim();
+      const adminPass = document.getElementById('newtenant-admin-pass').value.trim();
+
+      if (!name || !slug) {
+        return showToast('Clinic Name and unique slug are required.', 'error');
+      }
+
+      try {
+        const payload = {
+          name, slug, parent, plan, address, phones,
+          adminName: adminName || (name + ' Admin'),
+          adminUsername: adminUser || ('admin.' + slug),
+          adminPassword: adminPass || 'Admin@123'
+        };
+
+        const res = await fetch('/api/tenants', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || 'Failed to provision tenant');
+        }
+
+        showToast('Tenant "' + name + '" successfully provisioned on D1!');
+        appState.activeTenantId = data.tenant.id;
+        if (!appState.tenants) appState.tenants = [];
+        if (!appState.tenants.find(t => t.id === data.tenant.id)) {
+          appState.tenants.push(data.tenant);
+        }
+        saveState();
+        closeTenantModal();
+        updateTenantUI();
+        await syncWithCloudflareD1();
+        refreshAllViews();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
     async function pushFullLocalStateToD1() {
       setCloudStatus('syncing', 'Pushing to D1...');
       try {
         const res = await fetch('/api/sync', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(appState)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -2324,7 +2497,7 @@
     }
 
     function renderIntakeForm() {
-      const nextToken = appState.patients.length ? String(Math.max(...appState.patients.map(p => Number(p.token) || 1368)) + 1) : '1371';
+      const nextToken = appState.patients.length ? String(Math.max(...appState.patients.map(p => Number(p.token) || 1000)) + 1) : '1001';
       document.getElementById('in-token').value = nextToken;
       document.getElementById('in-date').value = new Date().toISOString().split('T')[0];
 
@@ -2520,7 +2693,7 @@
 
     function updateLiveQrWithAmount(amount) {
       const st = appState.settings;
-      const token = document.getElementById('in-token').value || '1371';
+      const token = document.getElementById('in-token').value || '1001';
       const name = encodeURIComponent(document.getElementById('in-name').value.trim() || 'Patient');
       const uri = `upi://pay?pa=${st.vpa}&pn=${encodeURIComponent(st.facilityName)}&am=${amount}&cu=INR&tn=Token-${token}-${name}`;
 
@@ -2612,7 +2785,7 @@
       // Async push to Cloudflare D1
       fetch('/api/patients', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newPatient)
       }).then(r => r.json()).then(d => {
         if (d.ok) setCloudStatus('connected');
@@ -2641,7 +2814,21 @@
       });
 
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">No matching patient records found</td></tr>`;
+        if (!appState.patients.length) {
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-12">
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                <i data-lucide="inbox" class="w-6 h-6"></i>
+              </div>
+              <p class="font-bold text-slate-700">No Patient Records in this Clinic Workspace</p>
+              <p class="text-xs text-slate-400">Register your first patient using Patient Intake to begin clinical diagnostic logging.</p>
+              <button onclick="switchTab('intake')" class="mt-2 px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold shadow hover:bg-brand-700">+ Register Patient</button>
+            </div>
+          </td></tr>`;
+          if (window.lucide) lucide.createIcons();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">No matching patient records found</td></tr>`;
+        }
         return;
       }
 
@@ -2697,7 +2884,7 @@
         document.getElementById('modal-indication').value = p.indication;
       } else {
         title.innerText = "Add New Patient Record";
-        const nextToken = appState.patients.length ? String(Math.max(...appState.patients.map(p => Number(p.token) || 1368)) + 1) : '1371';
+        const nextToken = appState.patients.length ? String(Math.max(...appState.patients.map(p => Number(p.token) || 1000)) + 1) : '1001';
         document.getElementById('modal-patient-id').value = '';
         document.getElementById('modal-token').value = nextToken;
         document.getElementById('modal-date').value = new Date().toISOString().split('T')[0];
@@ -2794,7 +2981,7 @@
       saveState();
       refreshAllViews();
 
-      fetch(`/api/patients/${id}`, { method: 'DELETE' }).catch(err => setCloudStatus('offline'));
+      fetch(`/api/patients/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
       showToast("Patient record deleted from D1 & workstation.");
     }
 
@@ -2829,7 +3016,10 @@
 
       const partBody = document.getElementById('partner-directory-tbody');
       if (partBody) {
-        partBody.innerHTML = (appState.referralPartners || []).map((rp, idx) => `
+        if (!appState.referralPartners || !appState.referralPartners.length) {
+          partBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No referral partners registered yet. Add referring hospitals or doctors above.</td></tr>`;
+        } else {
+          partBody.innerHTML = (appState.referralPartners || []).map((rp, idx) => `
           <tr class="hover:bg-slate-50">
             <td class="py-2 px-2 font-bold text-slate-900">${rp.name}</td>
             <td class="py-2 px-2 text-slate-600">${rp.type}</td>
@@ -2839,6 +3029,7 @@
             </td>
           </tr>
         `).join('');
+        }
       }
 
       const summaryBody = document.getElementById('referral-partner-summary-tbody');
@@ -2857,7 +3048,10 @@
 
       const historyBody = document.getElementById('referral-payouts-history-tbody');
       if (historyBody) {
-        historyBody.innerHTML = (appState.referralPayouts || []).map((rfp, idx) => `
+        if (!appState.referralPayouts || !appState.referralPayouts.length) {
+          historyBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No referral payouts recorded yet.</td></tr>`;
+        } else {
+          historyBody.innerHTML = (appState.referralPayouts || []).map((rfp, idx) => `
           <tr class="hover:bg-slate-50">
             <td class="py-2 px-2 text-slate-500">${rfp.date}</td>
             <td class="py-2 px-2 font-semibold text-slate-800">${rfp.partner}</td>
@@ -2865,6 +3059,7 @@
             <td class="py-2 px-2 text-center"><button onclick="removeReferralPayout('${rfp.id || idx}', ${idx})" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Del</button></td>
           </tr>
         `).join('');
+        }
       }
     }
 
@@ -2883,7 +3078,7 @@
 
       fetch('/api/tariffs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(appState.tariffs)
       }).catch(err => setCloudStatus('offline'));
 
@@ -2907,7 +3102,7 @@
 
       fetch('/api/referral-partners', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(partner)
       }).catch(err => setCloudStatus('offline'));
 
@@ -2921,7 +3116,7 @@
       renderReferralsView();
 
       if (id && String(id).startsWith('RP')) {
-        fetch(`/api/referral-partners/${id}`, { method: 'DELETE' }).catch(err => setCloudStatus('offline'));
+        fetch(`/api/referral-partners/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
       }
     }
 
@@ -2940,7 +3135,7 @@
 
       fetch('/api/referral-payouts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payout)
       }).catch(err => setCloudStatus('offline'));
 
@@ -2954,7 +3149,7 @@
       renderReferralsView();
 
       if (id && String(id).startsWith('RFP')) {
-        fetch(`/api/referral-payouts/${id}`, { method: 'DELETE' }).catch(err => setCloudStatus('offline'));
+        fetch(`/api/referral-payouts/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
       }
     }
 
@@ -2992,7 +3187,7 @@
 
       fetch('/api/tariffs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(appState.tariffs)
       }).catch(err => setCloudStatus('offline'));
 
@@ -3086,7 +3281,7 @@
 
       fetch('/api/patients', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(p)
       }).catch(err => setCloudStatus('offline'));
 
@@ -3409,7 +3604,7 @@
 
       fetch('/api/doctors', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       }).catch(err => setCloudStatus('offline'));
     }
@@ -3424,7 +3619,7 @@
       refreshAllViews();
 
       if (id && String(id).startsWith('DOC')) {
-        fetch(`/api/doctors/${id}`, { method: 'DELETE' }).catch(err => setCloudStatus('offline'));
+        fetch(`/api/doctors/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
       }
       showToast("Reporting consultant removed.");
     }
@@ -3620,7 +3815,10 @@
 
       const opexTbody = document.getElementById('opex-tbody');
       if (opexTbody) {
-        opexTbody.innerHTML = (appState.expenses || []).map((e, idx) => `
+        if (!appState.expenses || !appState.expenses.length) {
+          opexTbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No operational expenses recorded yet. Add monthly overheads below.</td></tr>`;
+        } else {
+          opexTbody.innerHTML = (appState.expenses || []).map((e, idx) => `
           <tr class="hover:bg-slate-50">
             <td class="py-2 px-2"><input type="text" value="${e.category}" onchange="updateExpense('${e.id || idx}', ${idx}, 'category', this.value)" class="bg-slate-50 border rounded px-1.5 py-0.5 text-xs w-full font-medium" /></td>
             <td class="py-2 px-2"><input type="text" value="${e.name}" onchange="updateExpense('${e.id || idx}', ${idx}, 'name', this.value)" class="bg-slate-50 border rounded px-1.5 py-0.5 text-xs w-full font-medium" /></td>
@@ -3628,6 +3826,7 @@
             <td class="py-2 px-2 text-center"><button onclick="removeExpense('${e.id || idx}', ${idx})" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Del</button></td>
           </tr>
         `).join('');
+        }
       }
     }
 
@@ -3651,7 +3850,7 @@
 
       fetch('/api/ledger', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(entry)
       }).catch(err => setCloudStatus('offline'));
 
@@ -3665,7 +3864,7 @@
       refreshAllViews();
 
       if (id && String(id).startsWith('L')) {
-        fetch(`/api/ledger/${id}`, { method: 'DELETE' }).catch(err => setCloudStatus('offline'));
+        fetch(`/api/ledger/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
       }
       showToast("Ledger entry removed.");
     }
@@ -3679,7 +3878,7 @@
 
       fetch('/api/expenses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(appState.expenses[idx])
       }).catch(err => setCloudStatus('offline'));
 
@@ -3704,7 +3903,7 @@
 
       fetch('/api/expenses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(expense)
       }).catch(err => setCloudStatus('offline'));
 
@@ -3719,7 +3918,7 @@
       refreshAllViews();
 
       if (id && String(id).startsWith('E')) {
-        fetch(`/api/expenses/${id}`, { method: 'DELETE' }).catch(err => setCloudStatus('offline'));
+        fetch(`/api/expenses/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
       }
       showToast("OPEX item removed.");
     }
@@ -3739,7 +3938,7 @@
 
       fetch('/api/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(st)
       }).catch(err => setCloudStatus('offline'));
 
@@ -3979,27 +4178,8 @@
 
 
     // ==========================================
-    // USER AUTHENTICATION & SESSION MANAGEMENT
+    // USER AUTHENTICATION & SESSION MANAGEMENT (UI Handlers)
     // ==========================================
-    const AUTH_TOKEN_KEY = 'NEXA_LMIS_AUTH_TOKEN_V1';
-    const AUTH_USER_KEY = 'NEXA_LMIS_AUTH_USER_V1';
-
-    let currentAuthUser = null;
-    let currentAuthToken = localStorage.getItem(AUTH_TOKEN_KEY);
-
-    try {
-      currentAuthUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY));
-    } catch (e) {
-      currentAuthUser = null;
-    }
-
-    function getAuthHeaders() {
-      const headers = { 'Content-Type': 'application/json' };
-      if (currentAuthToken) {
-        headers['Authorization'] = `Bearer ${currentAuthToken}`;
-      }
-      return headers;
-    }
 
     function updateAuthUI() {
       const loginModal = document.getElementById('loginModal');
@@ -4185,9 +4365,11 @@
     // Initialize application on load
     window.onload = function() {
       checkAuthSession();
+      updateTenantUI();
       switchTab(appState.activeTab || 'dashboard');
       // Background sync with Cloudflare D1
       syncWithCloudflareD1();
+      loadTenantsList();
     };
   </script>
 </body>

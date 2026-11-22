@@ -1,7 +1,7 @@
 /**
- * Cloudflare Worker for Nexa-LMIS | Al-Jawahira Electrophysiology Clinical Workstation
+ * Cloudflare Worker for Nexa-LMIS Multi-Tenant SaaS
  * Compliant with Cloudflare Security Policies & Cloudflare D1 (Serverless SQLite)
- * Includes Secure User Authentication (RBAC: Admin, Doctor, Technician)
+ * Multi-Tenant Architecture with Strict Data Isolation & Zero-Demo Clean State
  */
 
 const SECURITY_HEADERS = {
@@ -12,7 +12,7 @@ const SECURITY_HEADERS = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Tenant-ID',
   'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-src 'self';"
 };
 
@@ -55,7 +55,7 @@ function generateToken() {
 }
 
 /**
- * Automatically ensure Cloudflare D1 tables exist and are seeded
+ * Multi-Tenant D1 Schema Verification
  */
 let schemaInitialized = false;
 async function ensureD1Schema(db) {
@@ -63,8 +63,19 @@ async function ensureD1Schema(db) {
 
   await db.batch([
     db.prepare(`
+      CREATE TABLE IF NOT EXISTS tenants (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        plan TEXT NOT NULL DEFAULT 'PRO',
+        status TEXT NOT NULL DEFAULT 'ACTIVE',
+        created_at TEXT NOT NULL
+      )
+    `),
+    db.prepare(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         full_name TEXT NOT NULL,
@@ -88,6 +99,7 @@ async function ensureD1Schema(db) {
     db.prepare(`
       CREATE TABLE IF NOT EXISTS facility_settings (
         id TEXT PRIMARY KEY DEFAULT 'default',
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         facility_name TEXT NOT NULL,
         parent_entity TEXT NOT NULL,
         cin TEXT NOT NULL,
@@ -101,6 +113,7 @@ async function ensureD1Schema(db) {
     db.prepare(`
       CREATE TABLE IF NOT EXISTS reporting_doctors (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         name TEXT NOT NULL,
         designation TEXT NOT NULL,
         qualification TEXT NOT NULL,
@@ -112,17 +125,20 @@ async function ensureD1Schema(db) {
     `),
     db.prepare(`
       CREATE TABLE IF NOT EXISTS tariffs (
-        code TEXT PRIMARY KEY,
+        code TEXT NOT NULL,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         name TEXT NOT NULL,
         fee REAL NOT NULL,
         doc_share REAL NOT NULL,
         ref_share REAL NOT NULL,
-        updated_at TEXT NOT NULL
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (tenant_id, code)
       )
     `),
     db.prepare(`
       CREATE TABLE IF NOT EXISTS patients (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         token TEXT NOT NULL,
         date TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -156,6 +172,7 @@ async function ensureD1Schema(db) {
     db.prepare(`
       CREATE TABLE IF NOT EXISTS referral_partners (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         name TEXT NOT NULL,
         type TEXT NOT NULL,
         tier REAL NOT NULL DEFAULT 1.0,
@@ -165,6 +182,7 @@ async function ensureD1Schema(db) {
     db.prepare(`
       CREATE TABLE IF NOT EXISTS referral_payouts (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         date TEXT NOT NULL,
         partner TEXT NOT NULL,
         amount REAL NOT NULL,
@@ -175,6 +193,7 @@ async function ensureD1Schema(db) {
     db.prepare(`
       CREATE TABLE IF NOT EXISTS ledger_entries (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         doctor_name TEXT NOT NULL,
         type TEXT NOT NULL,
         date TEXT NOT NULL,
@@ -186,47 +205,27 @@ async function ensureD1Schema(db) {
     db.prepare(`
       CREATE TABLE IF NOT EXISTS expenses (
         id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         category TEXT NOT NULL,
         name TEXT NOT NULL,
         amount REAL NOT NULL,
-        created_at TEXT NOT NULL
+        updated_at TEXT NOT NULL
       )
     `)
   ]);
 
-  // Seed default users if empty
-  const usersCheck = await db.prepare("SELECT COUNT(*) as count FROM users").first();
-  if (!usersCheck || usersCheck.count === 0) {
-    const now = new Date().toISOString();
-    await db.batch([
-      db.prepare(`
-        INSERT INTO users (id, username, email, full_name, role, password_hash, password_salt, status, created_at)
-        VALUES 
-        ('USR_ADMIN', 'admin', 'admin@aljawahira.com', 'Al-Jawahira Administrator', 'ADMIN', '1a82233d9d94ee1bda69664ef3278c26f1b492c2231989cbeac811d5c352ede4', 'salt_admin_2026', 'ACTIVE', ?),
-        ('USR_RECEPTION', 'reception', 'reception@aljawahira.com', 'Front Desk Receptionist', 'RECEPTION', '09cecd3414bf79c1d6e7ff80704a90eae863dc7270366627a964f51cd2c384dc', 'salt_reception_2026', 'ACTIVE', ?),
-        ('USR_DOC_RAYEES', 'dr.rayees', 'rayees@aljawahira.com', 'Dr. Rayees Ahmad Tarray', 'DOCTOR', '8d3839986ad7e38be81f094b9598b0b0c3f499ea1234bf1e070021ce40bf9064', 'salt_doc_2026', 'ACTIVE', ?),
-        ('USR_TECH_KULGAM', 'tech.kulgam', 'tech@aljawahira.com', 'Clinical Technologist Desk', 'TECHNICIAN', '2214da9a419272ca44eda2ba0e777cb8b1ed5fafb021f5058999d22fe04cef14', 'salt_tech_2026', 'ACTIVE', ?)
-      `).bind(now, now, now, now)
-    ]);
-  }
-
-  // Seed default facility settings if empty
-  const settingsCheck = await db.prepare("SELECT COUNT(*) as count FROM facility_settings").first();
-  if (!settingsCheck || settingsCheck.count === 0) {
-    const now = new Date().toISOString();
-    await db.batch([
-      db.prepare(`
-        INSERT INTO facility_settings (id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
-        VALUES ('default', 'AL JAWAHIRA ELECTROPHYSIOLOGY', 'SpringNexa Private Limited', 'U86900JK2026PTC018519', 'DIPP238776', 'Near Gousia Pharmacy District Hospital Road Kulgam', '+91-7006318286 | +91-6006220236', 'springnexaa@okaxis', ?)
-      `).bind(now)
-    ]);
-  }
+  // Ensure default primary tenant
+  const now = new Date().toISOString();
+  await db.prepare(`
+    INSERT OR IGNORE INTO tenants (id, name, slug, plan, status, created_at)
+    VALUES ('default', 'Al-Jawahira Neuro Workstation', 'al-jawahira', 'ENTERPRISE', 'ACTIVE', ?)
+  `).bind(now).run();
 
   schemaInitialized = true;
 }
 
 /**
- * Validate Authorization header token
+ * Authenticate session token and return user with tenant_id
  */
 async function authenticateUser(request, db) {
   const authHeader = request.headers.get('Authorization') || '';
@@ -235,7 +234,7 @@ async function authenticateUser(request, db) {
   if (!token) return null;
 
   const session = await db.prepare(`
-    SELECT s.token, s.expires_at, u.id, u.username, u.email, u.full_name, u.role, u.status
+    SELECT s.token, s.expires_at, u.id, u.username, u.email, u.full_name, u.role, u.tenant_id
     FROM user_sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.token = ? AND u.status = 'ACTIVE'
@@ -252,15 +251,48 @@ async function authenticateUser(request, db) {
     username: session.username,
     email: session.email,
     fullName: session.full_name,
-    role: session.role
+    role: session.role,
+    tenantId: session.tenant_id || 'default'
   };
 }
 
 /**
- * Load complete application state from Cloudflare D1
+ * Resolve active tenant identifier
  */
-async function getFullState(db, userRole = null) {
+function resolveTenantId(request, currentUser = null) {
+  const headerTenant = request.headers.get('X-Tenant-ID');
+  if (headerTenant && headerTenant.trim()) {
+    return headerTenant.trim().toLowerCase();
+  }
+
+  const url = new URL(request.url);
+  const queryTenant = url.searchParams.get('tenant_id');
+  if (queryTenant && queryTenant.trim()) {
+    return queryTenant.trim().toLowerCase();
+  }
+
+  if (currentUser?.tenantId) {
+    return currentUser.tenantId;
+  }
+
+  return 'default';
+}
+
+const DEFAULT_STANDARD_TARIFFS = {
+  NCV:  { code: 'NCV',  name: 'Nerve Conduction Velocity (Motor & Sensory)', fee: 2500, docShare: 1000, refShare: 300 },
+  EEG:  { code: 'EEG',  name: 'Routine Video Electroencephalography',        fee: 2000, docShare: 800,  refShare: 250 },
+  EMG:  { code: 'EMG',  name: 'Concentric Needle Electromyography',          fee: 3000, docShare: 1200, refShare: 400 },
+  RNST: { code: 'RNST', name: 'Repetitive Nerve Stimulation Test',          fee: 2200, docShare: 900,  refShare: 250 },
+  VEP:  { code: 'VEP',  name: 'Visual Evoked Potential (Pattern Reversal)',  fee: 1500, docShare: 600,  refShare: 200 },
+  BERA: { code: 'BERA', name: 'Brainstem Evoked Response Audiometry',       fee: 2500, docShare: 1000, refShare: 300 }
+};
+
+/**
+ * Load complete application state scoped strictly to tenant
+ */
+async function getFullState(db, userRole = null, tenantId = 'default') {
   const [
+    tenantRow,
     settingsRow,
     doctorsResult,
     tariffsResult,
@@ -270,26 +302,32 @@ async function getFullState(db, userRole = null) {
     ledgerResult,
     expensesResult
   ] = await Promise.all([
-    db.prepare("SELECT * FROM facility_settings WHERE id = 'default'").first(),
-    db.prepare("SELECT * FROM reporting_doctors ORDER BY created_at ASC").all(),
-    db.prepare("SELECT * FROM tariffs ORDER BY code ASC").all(),
-    db.prepare("SELECT * FROM patients ORDER BY date DESC, token DESC").all(),
-    db.prepare("SELECT * FROM referral_partners ORDER BY name ASC").all(),
-    db.prepare("SELECT * FROM referral_payouts ORDER BY date DESC").all(),
-    db.prepare("SELECT * FROM ledger_entries ORDER BY date DESC").all(),
-    db.prepare("SELECT * FROM expenses ORDER BY category ASC, name ASC").all()
+    db.prepare("SELECT * FROM tenants WHERE id = ? OR slug = ?").bind(tenantId, tenantId).first(),
+    db.prepare("SELECT * FROM facility_settings WHERE tenant_id = ?").bind(tenantId).first(),
+    db.prepare("SELECT * FROM reporting_doctors WHERE tenant_id = ? ORDER BY created_at ASC").bind(tenantId).all(),
+    db.prepare("SELECT * FROM tariffs WHERE tenant_id = ? ORDER BY code ASC").bind(tenantId).all(),
+    db.prepare("SELECT * FROM patients WHERE tenant_id = ? ORDER BY date DESC, token DESC").bind(tenantId).all(),
+    db.prepare("SELECT * FROM referral_partners WHERE tenant_id = ? ORDER BY name ASC").bind(tenantId).all(),
+    db.prepare("SELECT * FROM referral_payouts WHERE tenant_id = ? ORDER BY date DESC").bind(tenantId).all(),
+    db.prepare("SELECT * FROM ledger_entries WHERE tenant_id = ? ORDER BY date DESC").bind(tenantId).all(),
+    db.prepare("SELECT * FROM expenses WHERE tenant_id = ? ORDER BY category ASC, name ASC").bind(tenantId).all()
   ]);
 
   const tariffsObj = {};
-  (tariffsResult.results || []).forEach(t => {
-    tariffsObj[t.code] = {
-      code: t.code,
-      name: t.name,
-      fee: t.fee,
-      docShare: t.doc_share,
-      refShare: t.ref_share
-    };
-  });
+  if (tariffsResult.results && tariffsResult.results.length > 0) {
+    tariffsResult.results.forEach(t => {
+      tariffsObj[t.code] = {
+        code: t.code,
+        name: t.name,
+        fee: t.fee,
+        docShare: t.doc_share,
+        refShare: t.ref_share
+      };
+    });
+  } else {
+    // Provide standard base tariffs if not yet customized
+    Object.assign(tariffsObj, DEFAULT_STANDARD_TARIFFS);
+  }
 
   const doctorsList = (doctorsResult.results || []).map(d => ({
     id: d.id,
@@ -341,7 +379,22 @@ async function getFullState(db, userRole = null) {
     amount: l.amount
   }));
 
+  const tenantName = tenantRow?.name || 'Electrophysiology Diagnostic Center';
+
   return {
+    tenant: tenantRow ? {
+      id: tenantRow.id,
+      name: tenantRow.name,
+      slug: tenantRow.slug,
+      plan: tenantRow.plan,
+      status: tenantRow.status
+    } : {
+      id: tenantId,
+      name: tenantName,
+      slug: tenantId,
+      plan: 'PRO',
+      status: 'ACTIVE'
+    },
     settings: settingsRow ? {
       facilityName: settingsRow.facility_name,
       parentEntity: settingsRow.parent_entity,
@@ -350,7 +403,15 @@ async function getFullState(db, userRole = null) {
       address: settingsRow.address,
       phones: settingsRow.phones,
       vpa: settingsRow.vpa
-    } : null,
+    } : {
+      facilityName: tenantName,
+      parentEntity: 'Nexa-LMIS Enterprise Network',
+      cin: '',
+      dpiit: '',
+      address: 'Clinical Diagnostic Facility',
+      phones: '',
+      vpa: ''
+    },
     reportingDoctors: doctorsList,
     tariffs: tariffsObj,
     patients: patientsList,
@@ -391,8 +452,7 @@ export default {
       if (!env?.DB) {
         return jsonResponse({
           ok: false,
-          error: 'Cloudflare D1 Database binding "DB" is not configured.',
-          hint: 'Add [[d1_databases]] binding = "DB" in wrangler.toml'
+          error: 'Cloudflare D1 Database binding "DB" is not configured.'
         }, 503);
       }
 
@@ -404,10 +464,98 @@ export default {
         return jsonResponse({
           ok: true,
           status: 'healthy',
+          architecture: 'Multi-Tenant Serverless SaaS',
           database: 'Cloudflare D1 SQLite',
           connected: Boolean(test?.alive),
           timestamp: new Date().toISOString()
         });
+      }
+
+      // ==========================================
+      // MULTI-TENANT MANAGEMENT ROUTES
+      // ==========================================
+
+      // GET /api/tenants - List All Organizations
+      if (url.pathname === '/api/tenants' && request.method === 'GET') {
+        const { results = [] } = await env.DB.prepare(`
+          SELECT id, name, slug, plan, status, created_at FROM tenants ORDER BY created_at ASC
+        `).all();
+        return jsonResponse({ ok: true, tenants: results });
+      }
+
+      // POST /api/tenants - Provision New Diagnostic Clinic (Tenant)
+      if (url.pathname === '/api/tenants' && request.method === 'POST') {
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const name = String(body.name || '').trim();
+        const slug = String(body.slug || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+        const plan = String(body.plan || 'PRO').toUpperCase();
+
+        if (!name || !slug) {
+          return jsonResponse({ error: 'Clinic Organization Name and unique Slug are required.' }, 400);
+        }
+
+        const existing = await env.DB.prepare("SELECT id FROM tenants WHERE slug = ?").bind(slug).first();
+        if (existing) {
+          return jsonResponse({ error: `An organization with slug '${slug}' already exists.` }, 409);
+        }
+
+        const tenantId = 'org_' + slug;
+        const now = new Date().toISOString();
+
+        // Admin Credentials for this tenant
+        const adminUsername = String(body.adminUsername || ('admin.' + slug)).trim().toLowerCase();
+        const adminEmail = String(body.adminEmail || (`admin@${slug}.com`)).trim().toLowerCase();
+        const adminName = String(body.adminName || `${name} Director`).trim();
+        const adminPassword = String(body.adminPassword || 'Admin@123');
+
+        const salt = 'salt_' + crypto.randomUUID().slice(0, 8);
+        const passwordHash = await hashPassword(adminPassword, salt);
+        const adminId = 'USR_' + Date.now();
+
+        await env.DB.batch([
+          env.DB.prepare(`
+            INSERT INTO tenants (id, name, slug, plan, status, created_at)
+            VALUES (?, ?, ?, ?, 'ACTIVE', ?)
+          `).bind(tenantId, name, slug, plan, now),
+
+          env.DB.prepare(`
+            INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            'setting_' + tenantId,
+            tenantId,
+            name,
+            body.parentEntity || (name + ' Healthcare Ltd'),
+            body.cin || '',
+            body.dpiit || '',
+            body.address || 'Diagnostic Clinic Facility',
+            body.phones || '',
+            body.vpa || '',
+            now
+          ),
+
+          env.DB.prepare(`
+            INSERT INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'ADMIN', ?, ?, 'ACTIVE', ?)
+          `).bind(adminId, tenantId, adminUsername, adminEmail, adminName, passwordHash, salt, now)
+        ]);
+
+        // Seed standard diagnostic tariffs for new clinic
+        for (const [code, t] of Object.entries(DEFAULT_STANDARD_TARIFFS)) {
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO tariffs (code, tenant_id, name, fee, doc_share, ref_share, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(code, tenantId, t.name, t.fee, t.docShare, t.refShare, now).run();
+        }
+
+        return jsonResponse({
+          ok: true,
+          tenant: { id: tenantId, name, slug, plan },
+          adminUser: { id: adminId, username: adminUsername, email: adminEmail, fullName: adminName, role: 'ADMIN' },
+          message: `Diagnostic Organization '${name}' provisioned successfully!`
+        }, 201);
       }
 
       // ==========================================
@@ -426,7 +574,7 @@ export default {
         }
 
         const user = await env.DB.prepare(`
-          SELECT id, username, email, full_name, role, password_hash, password_salt, status
+          SELECT id, tenant_id, username, email, full_name, role, password_hash, password_salt, status
           FROM users
           WHERE (lower(username) = ? OR lower(email) = ?)
         `).bind(usernameOrEmail, usernameOrEmail).first();
@@ -436,7 +584,7 @@ export default {
         }
 
         if (user.status !== 'ACTIVE') {
-          return jsonResponse({ error: 'User account is deactivated. Contact administrator.' }, 403);
+          return jsonResponse({ error: 'User account is deactivated. Contact organization administrator.' }, 403);
         }
 
         const calculatedHash = await hashPassword(password, user.password_salt);
@@ -446,17 +594,17 @@ export default {
 
         const token = generateToken();
         const now = new Date();
-        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
         await env.DB.batch([
           env.DB.prepare(`
             INSERT INTO user_sessions (token, user_id, created_at, expires_at)
             VALUES (?, ?, ?, ?)
           `).bind(token, user.id, now.toISOString(), expiresAt),
-          env.DB.prepare(`
-            UPDATE users SET last_login_at = ? WHERE id = ?
-          `).bind(now.toISOString(), user.id)
+          env.DB.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").bind(now.toISOString(), user.id)
         ]);
+
+        const tenant = await env.DB.prepare("SELECT * FROM tenants WHERE id = ?").bind(user.tenant_id || 'default').first();
 
         return jsonResponse({
           ok: true,
@@ -466,8 +614,16 @@ export default {
             username: user.username,
             email: user.email,
             fullName: user.full_name,
-            role: user.role
-          }
+            role: user.role,
+            tenantId: user.tenant_id || 'default'
+          },
+          tenant: tenant ? {
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            plan: tenant.plan
+          } : { id: 'default', name: 'Nexa-LMIS Workstation', slug: 'default', plan: 'PRO' },
+          expiresAt
         });
       }
 
@@ -475,9 +631,10 @@ export default {
       if (url.pathname === '/api/auth/me' && request.method === 'GET') {
         const currentUser = await authenticateUser(request, env.DB);
         if (!currentUser) {
-          return jsonResponse({ ok: false, error: 'Unauthorized. Please log in.' }, 401);
+          return jsonResponse({ error: 'Unauthenticated session.' }, 401);
         }
-        return jsonResponse({ ok: true, user: currentUser });
+        const tenant = await env.DB.prepare("SELECT * FROM tenants WHERE id = ?").bind(currentUser.tenantId).first();
+        return jsonResponse({ ok: true, user: currentUser, tenant });
       }
 
       // POST /api/auth/logout
@@ -490,22 +647,25 @@ export default {
         return jsonResponse({ ok: true, message: 'Logged out successfully.' });
       }
 
-      // GET /api/users - List users
+      // GET /api/users - List users for current tenant
       if (url.pathname === '/api/users' && request.method === 'GET') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const { results = [] } = await env.DB.prepare(`
-          SELECT id, username, email, full_name, role, status, last_login_at, created_at
-          FROM users ORDER BY created_at ASC
-        `).all();
+          SELECT id, tenant_id, username, email, full_name, role, status, last_login_at, created_at
+          FROM users WHERE tenant_id = ? ORDER BY created_at ASC
+        `).bind(tenantId).all();
         return jsonResponse({ ok: true, users: results });
       }
 
-      // POST /api/users - Create User (Admin Only)
+      // POST /api/users - Create User (Admin Only for current tenant)
       if (url.pathname === '/api/users' && request.method === 'POST') {
         const currentUser = await authenticateUser(request, env.DB);
         if (!currentUser || currentUser.role !== 'ADMIN') {
           return jsonResponse({ error: 'Administrator privilege required to create users.' }, 403);
         }
 
+        const tenantId = resolveTenantId(request, currentUser);
         const body = await request.json();
         const username = String(body.username || '').trim().toLowerCase();
         const email = String(body.email || '').trim().toLowerCase();
@@ -523,11 +683,11 @@ export default {
         const now = new Date().toISOString();
 
         await env.DB.prepare(`
-          INSERT INTO users (id, username, email, full_name, role, password_hash, password_salt, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
-        `).bind(id, username, email, fullName, role, passwordHash, salt, now).run();
+          INSERT INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+        `).bind(id, tenantId, username, email, fullName, role, passwordHash, salt, now).run();
 
-        return jsonResponse({ ok: true, id, message: `User ${username} created successfully.` }, 201);
+        return jsonResponse({ ok: true, id, message: `Operator ${username} registered successfully.` }, 201);
       }
 
       // DELETE /api/users/:id - Delete Staff User (Admin Only)
@@ -538,33 +698,36 @@ export default {
         }
         const id = url.pathname.split('/')[3];
         if (id === currentUser.id || id === 'USR_ADMIN') {
-          return jsonResponse({ error: 'Cannot delete the master administrator account.' }, 400);
+          return jsonResponse({ error: 'Cannot delete primary administrator account.' }, 400);
         }
-        await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
-        return jsonResponse({ ok: true, deleted: id, message: 'User removed from Cloudflare D1.' });
+        const tenantId = resolveTenantId(request, currentUser);
+        await env.DB.prepare("DELETE FROM users WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
+        return jsonResponse({ ok: true, deleted: id });
       }
 
-
       // ==========================================
-      // CLINICAL DATA ROUTES
+      // CLINICAL DATA ROUTES (TENANT SCOPED)
       // ==========================================
 
-      // GET /api/state - Full State for Client Init & Sync (Role-Filtered)
+      // GET /api/state - Full State for Client Init & Sync
       if (url.pathname === '/api/state' && request.method === 'GET') {
         const currentUser = await authenticateUser(request, env.DB);
-        const state = await getFullState(env.DB, currentUser?.role);
-        return jsonResponse({ ok: true, state, role: currentUser?.role || 'GUEST' });
+        const tenantId = resolveTenantId(request, currentUser);
+        const state = await getFullState(env.DB, currentUser?.role, tenantId);
+        return jsonResponse({ ok: true, state, role: currentUser?.role || 'GUEST', tenantId });
       }
 
-      // POST /api/sync - Bulk Push / Restore State to Cloudflare D1
+      // POST /api/sync - Bulk Push State to Cloudflare D1
       if (url.pathname === '/api/sync' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const body = await request.json();
         const now = new Date().toISOString();
 
         if (body.settings) {
           await env.DB.prepare(`
-            INSERT INTO facility_settings (id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
-            VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               facility_name=excluded.facility_name,
               parent_entity=excluded.parent_entity,
@@ -575,68 +738,39 @@ export default {
               vpa=excluded.vpa,
               updated_at=excluded.updated_at
           `).bind(
-            body.settings.facilityName,
-            body.settings.parentEntity,
-            body.settings.cin,
-            body.settings.dpiit,
-            body.settings.address,
-            body.settings.phones,
-            body.settings.vpa,
+            'setting_' + tenantId,
+            tenantId,
+            body.settings.facilityName || '',
+            body.settings.parentEntity || '',
+            body.settings.cin || '',
+            body.settings.dpiit || '',
+            body.settings.address || '',
+            body.settings.phones || '',
+            body.settings.vpa || '',
             now
           ).run();
         }
 
-        if (Array.isArray(body.patients)) {
-          for (const p of body.patients) {
-            await env.DB.prepare(`
-              INSERT INTO patients (
-                id, token, date, name, age, gender, phone, ref_doctor, reporting_doctor,
-                modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
-                report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
-                motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
-                created_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET
-                token=excluded.token, date=excluded.date, name=excluded.name, age=excluded.age,
-                gender=excluded.gender, phone=excluded.phone, ref_doctor=excluded.ref_doctor,
-                reporting_doctor=excluded.reporting_doctor, modality=excluded.modality,
-                fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share,
-                net_lab=excluded.net_lab, pay_mode=excluded.pay_mode, indication=excluded.indication,
-                report_title=excluded.report_title, lbl_param1=excluded.lbl_param1, lbl_param2=excluded.lbl_param2,
-                lbl_sec1=excluded.lbl_sec1, lbl_sec2=excluded.lbl_sec2, lbl_sec3=excluded.lbl_sec3,
-                motor_sampled=excluded.motor_sampled, sensory_sampled=excluded.sensory_sampled,
-                motor_findings=excluded.motor_findings, sensory_findings=excluded.sensory_findings,
-                fwaves_findings=excluded.fwaves_findings, impression=excluded.impression
-            `).bind(
-              p.id, p.token, p.date, p.name, p.age, p.gender, p.phone || '',
-              p.refDoctor || '', p.reportingDoctor || '', p.modality,
-              Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
-              p.payMode || 'UPI / QR', p.indication || '', p.reportTitle || '',
-              p.lblParam1 || '', p.lblParam2 || '', p.lblSec1 || '', p.lblSec2 || '', p.lblSec3 || '',
-              p.motorSampled || '', p.sensorySampled || '', p.motorFindings || '', p.sensoryFindings || '',
-              p.fwavesFindings || '', p.impression || '', now
-            ).run();
-          }
-        }
-
-        const updatedState = await getFullState(env.DB);
+        const updatedState = await getFullState(env.DB, currentUser?.role, tenantId);
         return jsonResponse({ ok: true, state: updatedState });
       }
 
-      // POST /api/patients - Create or Update Patient
+      // POST /api/patients - Register or Update Patient
       if (url.pathname === '/api/patients' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const p = await request.json();
         const now = new Date().toISOString();
         const id = p.id || ('P' + Date.now());
 
         await env.DB.prepare(`
           INSERT INTO patients (
-            id, token, date, name, age, gender, phone, ref_doctor, reporting_doctor,
+            id, tenant_id, token, date, name, age, gender, phone, ref_doctor, reporting_doctor,
             modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
             report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
             motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
             created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             token=excluded.token, date=excluded.date, name=excluded.name, age=excluded.age,
             gender=excluded.gender, phone=excluded.phone, ref_doctor=excluded.ref_doctor,
@@ -649,7 +783,7 @@ export default {
             motor_findings=excluded.motor_findings, sensory_findings=excluded.sensory_findings,
             fwaves_findings=excluded.fwaves_findings, impression=excluded.impression
         `).bind(
-          id, String(p.token), p.date, p.name, Number(p.age) || 0, p.gender, p.phone || '',
+          id, tenantId, String(p.token), p.date, p.name, Number(p.age) || 0, p.gender, p.phone || '',
           p.refDoctor || '', p.reportingDoctor || '', p.modality,
           Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
           p.payMode || 'UPI / QR', p.indication || '', p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT',
@@ -658,25 +792,29 @@ export default {
           p.fwavesFindings || '', p.impression || '', now
         ).run();
 
-        return jsonResponse({ ok: true, id, message: 'Patient saved to Cloudflare D1.' });
+        return jsonResponse({ ok: true, id, message: 'Patient saved to organization database.' });
       }
 
       // DELETE /api/patients/:id
       if (url.pathname.startsWith('/api/patients/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const id = url.pathname.split('/')[3];
-        await env.DB.prepare("DELETE FROM patients WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM patients WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
         return jsonResponse({ ok: true, deleted: id });
       }
 
       // POST /api/doctors - Add / Update Doctor
       if (url.pathname === '/api/doctors' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const d = await request.json();
         const now = new Date().toISOString();
         const id = d.id || ('DOC' + Date.now());
 
         await env.DB.prepare(`
-          INSERT INTO reporting_doctors (id, name, designation, qualification, reg_no, department, signature_url, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO reporting_doctors (id, tenant_id, name, designation, qualification, reg_no, department, signature_url, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             name=excluded.name,
             designation=excluded.designation,
@@ -685,7 +823,7 @@ export default {
             department=excluded.department,
             signature_url=excluded.signature_url
         `).bind(
-          id, d.name, d.designation || '', d.qualification || '',
+          id, tenantId, d.name, d.designation || '', d.qualification || '',
           d.regNo || '', d.department || '', d.signatureUrl || '', now
         ).run();
 
@@ -694,37 +832,43 @@ export default {
 
       // DELETE /api/doctors/:id
       if (url.pathname.startsWith('/api/doctors/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const id = url.pathname.split('/')[3];
-        await env.DB.prepare("DELETE FROM reporting_doctors WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM reporting_doctors WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
         return jsonResponse({ ok: true, deleted: id });
       }
 
       // POST /api/tariffs - Update Tariffs
       if (url.pathname === '/api/tariffs' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const tariffs = await request.json();
         const now = new Date().toISOString();
         for (const [code, t] of Object.entries(tariffs)) {
           await env.DB.prepare(`
-            INSERT INTO tariffs (code, name, fee, doc_share, ref_share, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(code) DO UPDATE SET
+            INSERT INTO tariffs (code, tenant_id, name, fee, doc_share, ref_share, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(tenant_id, code) DO UPDATE SET
               name=excluded.name,
               fee=excluded.fee,
               doc_share=excluded.doc_share,
               ref_share=excluded.ref_share,
               updated_at=excluded.updated_at
-          `).bind(code, t.name, Number(t.fee) || 0, Number(t.docShare) || 0, Number(t.refShare) || 0, now).run();
+          `).bind(code, tenantId, t.name, Number(t.fee) || 0, Number(t.docShare) || 0, Number(t.refShare) || 0, now).run();
         }
-        return jsonResponse({ ok: true, message: 'Tariffs updated in D1.' });
+        return jsonResponse({ ok: true, message: 'Tariffs updated.' });
       }
 
       // POST /api/settings - Update Facility Settings
       if (url.pathname === '/api/settings' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const st = await request.json();
         const now = new Date().toISOString();
         await env.DB.prepare(`
-          INSERT INTO facility_settings (id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
-          VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             facility_name=excluded.facility_name,
             parent_entity=excluded.parent_entity,
@@ -735,7 +879,7 @@ export default {
             vpa=excluded.vpa,
             updated_at=excluded.updated_at
         `).bind(
-          st.facilityName, st.parentEntity, st.cin, st.dpiit,
+          'setting_' + tenantId, tenantId, st.facilityName, st.parentEntity, st.cin, st.dpiit,
           st.address, st.phones, st.vpa, now
         ).run();
         return jsonResponse({ ok: true });
@@ -743,109 +887,107 @@ export default {
 
       // POST /api/referral-partners
       if (url.pathname === '/api/referral-partners' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const p = await request.json();
         const id = p.id || ('RP' + Date.now());
         const now = new Date().toISOString();
         await env.DB.prepare(`
-          INSERT INTO referral_partners (id, name, type, tier, created_at)
-          VALUES (?, ?, ?, ?, ?)
-        `).bind(id, p.name, p.type || 'Clinic', Number(p.tier) || 1.0, now).run();
+          INSERT INTO referral_partners (id, tenant_id, name, type, tier, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(id, tenantId, p.name, p.type || 'Clinic', Number(p.tier) || 1.0, now).run();
         return jsonResponse({ ok: true, id });
       }
 
       // DELETE /api/referral-partners/:id
       if (url.pathname.startsWith('/api/referral-partners/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const id = url.pathname.split('/')[3];
-        await env.DB.prepare("DELETE FROM referral_partners WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM referral_partners WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
         return jsonResponse({ ok: true, deleted: id });
       }
 
       // POST /api/referral-payouts
       if (url.pathname === '/api/referral-payouts' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const p = await request.json();
         const id = p.id || ('RFP' + Date.now());
         const now = new Date().toISOString();
         await env.DB.prepare(`
-          INSERT INTO referral_payouts (id, date, partner, amount, mode, created_at)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).bind(id, p.date, p.partner, Number(p.amount) || 0, p.mode || 'Cash', now).run();
+          INSERT INTO referral_payouts (id, tenant_id, date, partner, amount, mode, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).bind(id, tenantId, p.date, p.partner, Number(p.amount) || 0, p.mode || 'Cash', now).run();
         return jsonResponse({ ok: true, id });
       }
 
       // DELETE /api/referral-payouts/:id
       if (url.pathname.startsWith('/api/referral-payouts/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const id = url.pathname.split('/')[3];
-        await env.DB.prepare("DELETE FROM referral_payouts WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM referral_payouts WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
         return jsonResponse({ ok: true, deleted: id });
       }
 
       // POST /api/ledger
       if (url.pathname === '/api/ledger' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const l = await request.json();
         const id = l.id || ('L' + Date.now());
         const now = new Date().toISOString();
         await env.DB.prepare(`
-          INSERT INTO ledger_entries (id, doctor_name, type, date, description, amount, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).bind(id, l.doctorName, l.type, l.date, l.desc, Number(l.amount) || 0, now).run();
+          INSERT INTO ledger_entries (id, tenant_id, doctor_name, type, date, description, amount, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(id, tenantId, l.doctorName, l.type, l.date, l.desc, Number(l.amount) || 0, now).run();
         return jsonResponse({ ok: true, id });
       }
 
       // DELETE /api/ledger/:id
       if (url.pathname.startsWith('/api/ledger/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        const tenantId = resolveTenantId(request, currentUser);
         const id = url.pathname.split('/')[3];
-        await env.DB.prepare("DELETE FROM ledger_entries WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM ledger_entries WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
         return jsonResponse({ ok: true, deleted: id });
       }
 
-      // POST /api/expenses
+      // POST /api/expenses (Admin Only)
       if (url.pathname === '/api/expenses' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+          return jsonResponse({ error: 'Admin access required to log operating expenses.' }, 403);
+        }
+        const tenantId = resolveTenantId(request, currentUser);
         const e = await request.json();
         const id = e.id || ('E' + Date.now());
         const now = new Date().toISOString();
         await env.DB.prepare(`
-          INSERT INTO expenses (id, category, name, amount, created_at)
-          VALUES (?, ?, ?, ?, ?)
-          ON CONFLICT(id) DO UPDATE SET
-            category=excluded.category,
-            name=excluded.name,
-            amount=excluded.amount
-        `).bind(id, e.category, e.name, Number(e.amount) || 0, now).run();
+          INSERT INTO expenses (id, tenant_id, category, name, amount, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(id, tenantId, e.category || 'Operations', e.name, Number(e.amount) || 0, now).run();
         return jsonResponse({ ok: true, id });
       }
 
-      // DELETE /api/expenses/:id
+      // DELETE /api/expenses/:id (Admin Only)
       if (url.pathname.startsWith('/api/expenses/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+          return jsonResponse({ error: 'Admin access required to remove expenses.' }, 403);
+        }
+        const tenantId = resolveTenantId(request, currentUser);
         const id = url.pathname.split('/')[3];
-        await env.DB.prepare("DELETE FROM expenses WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM expenses WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
         return jsonResponse({ ok: true, deleted: id });
       }
 
-      return jsonResponse({ error: 'Endpoint not found' }, 404);
+      // 404 for unmatched API routes
+      return jsonResponse({ error: `API route not found: ${request.method} ${url.pathname}` }, 404);
     }
 
-    // Serve static assets if configured
-    if (env?.ASSETS) {
-      let assetResponse = await env.ASSETS.fetch(request);
-      if (assetResponse.status === 404 && request.method === 'GET' && !url.pathname.includes('.')) {
-        const indexUrl = new URL('/index.html', request.url);
-        assetResponse = await env.ASSETS.fetch(new Request(indexUrl, request));
-      }
-      const headers = new Headers(assetResponse.headers);
-      for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
-        headers.set(k, v);
-      }
-      return new Response(assetResponse.body, {
-        status: assetResponse.status,
-        statusText: assetResponse.statusText,
-        headers
-      });
-    }
-
-    return jsonResponse({
-      name: 'Nexa-LMIS Al-Jawahira Electrophysiology Clinical Workstation',
-      service: 'Cloudflare Worker & D1 SQLite API',
-      status: 'active'
-    });
+    // Serve static workstation assets
+    return env.ASSETS.fetch(request);
   }
 };
