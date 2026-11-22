@@ -1052,8 +1052,12 @@
             <!-- DOCTOR SELECTOR FOR LEDGER -->
             <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
               <div class="flex items-center gap-3 w-full sm:w-auto">
-                <label class="text-xs font-bold text-slate-700 shrink-0">Select Consultant:</label>
+                <label id="ledger-doctor-label" class="text-xs font-bold text-slate-700 shrink-0">Select Consultant:</label>
                 <select id="ledger-doctor-filter" onchange="renderLedgerAndOpex()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-brand-700 w-full sm:w-56 focus:outline-none"></select>
+                <span id="ledger-doctor-readonly-badge" class="hidden px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs flex items-center gap-1.5">
+                  <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                  <span id="ledger-doctor-readonly-name"></span>
+                </span>
               </div>
               <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
                 <i data-lucide="calendar" class="w-4 h-4 text-brand-600"></i>
@@ -1288,7 +1292,7 @@
                   <td class="py-2.5 px-3 font-semibold text-slate-900">Executive Financial Dashboard & KPIs</td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Full Access</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[10px]">Restricted</span></td>
-                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[10px]">Clinical Metrics Only</span></td>
+                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[10px]">Locked 🔒 (Admin Only)</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[10px]">Restricted</span></td>
                 </tr>
                 <tr class="hover:bg-slate-50 bg-sky-50/40">
@@ -1305,14 +1309,14 @@
                   <td class="py-2.5 px-3 font-semibold text-slate-900">Patient Intake & Live UPI QR Desk</td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Full Access</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold text-[10px]">Full Intake Access</span></td>
-                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[10px]">View Only</span></td>
+                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[10px]">Locked 🔒</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Full Intake Access</span></td>
                 </tr>
                 <tr class="hover:bg-slate-50">
                   <td class="py-2.5 px-3 font-semibold text-slate-900">Structured NCS Clinical Report Writer</td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Full Access</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[10px]">Locked 🔒</span></td>
-                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Author & Sign Reports</span></td>
+                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[10px]">Assigned Patients Only ✅</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px]">Conduct Studies</span></td>
                 </tr>
                 <tr class="hover:bg-slate-50">
@@ -1330,10 +1334,10 @@
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[10px]">Locked 🔒</span></td>
                 </tr>
                 <tr class="hover:bg-slate-50">
-                  <td class="py-2.5 px-3 font-semibold text-slate-900">Dr. Settlement Ledger & Monthly OPEX</td>
-                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Manage Payouts & OPEX</span></td>
+                  <td class="py-2.5 px-3 font-semibold text-slate-900">Dr. Settlement Ledger & Payouts</td>
+                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">All Doctors + Payouts</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[10px]">Locked 🔒</span></td>
-                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[10px]">View Own Statement</span></td>
+                  <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[10px]">Concern Doctor Ledger Only ✅</span></td>
                   <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[10px]">Locked 🔒</span></td>
                 </tr>
                 <tr class="hover:bg-slate-50">
@@ -1776,6 +1780,31 @@
           sensoryFindings: 'Normal Latency, Amplitude and CV.',
           fwavesFindings: 'Normal minimum Latencies.',
           impression: 'EPS of sampled nerves is Within Normal Limits.'
+        },
+        {
+          id: 'P003',
+          token: '1371',
+          date: '2026-11-07',
+          name: 'Bilal Ahmad Wani',
+          age: 42,
+          gender: 'Male',
+          phone: '7006112233',
+          refDoctor: 'District Hospital Kulgam',
+          reportingDoctor: 'Dr. Showkat Ahmad Mir',
+          modality: 'EEG',
+          fee: 2000,
+          docShare: 800,
+          refShare: 250,
+          netLab: 950,
+          payMode: 'Cash',
+          indication: 'Episodic loss of consciousness and seizure screening',
+          reportTitle: 'ROUTINE VIDEO ELECTROENCEPHALOGRAPHY REPORT',
+          motorSampled: 'Standard 10-20 Electrode Placement.',
+          sensorySampled: 'Bipolar and Referential Montages.',
+          motorFindings: 'Symmetric background alpha activity 9-10 Hz.',
+          sensoryFindings: 'No focal slowing or epileptiform discharges.',
+          fwavesFindings: 'Normal photic driving response.',
+          impression: 'Routine Interictal EEG is Within Normal Limits.'
         }
       ],
       ledgerEntries: [
@@ -1926,9 +1955,47 @@
       ADMIN: ['dashboard', 'intake', 'registry', 'referrals', 'writer', 'tariff', 'report', 'ledger', 'doctor', 'settings', 'users'],
       RECEPTION: ['intake', 'registry', 'referrals', 'report'],
       RECEPTIONIST: ['intake', 'registry', 'referrals', 'report'],
-      DOCTOR: ['dashboard', 'writer', 'report', 'ledger'],
+      DOCTOR: ['writer', 'report', 'ledger'],
       TECHNICIAN: ['intake', 'writer', 'report']
     };
+
+    function getConcernDoctorName() {
+      if (!currentAuthUser || currentAuthUser.role !== 'DOCTOR') return null;
+
+      const userFullName = (currentAuthUser.fullName || '').trim().toLowerCase();
+      if (userFullName) {
+        const matchByName = (appState.reportingDoctors || []).find(d => {
+          const dName = (d.name || '').trim().toLowerCase();
+          return dName === userFullName || userFullName.includes(dName) || dName.includes(userFullName);
+        });
+        if (matchByName) return matchByName.name;
+      }
+
+      const uStr = ((currentAuthUser.username || '') + ' ' + (currentAuthUser.fullName || '')).toLowerCase();
+      const matchByKeyword = (appState.reportingDoctors || []).find(d => {
+        const dLower = (d.name || '').toLowerCase();
+        if (uStr.includes('rayees') && dLower.includes('rayees')) return true;
+        if (uStr.includes('showkat') && dLower.includes('showkat')) return true;
+        return false;
+      });
+      if (matchByKeyword) return matchByKeyword.name;
+
+      return currentAuthUser.fullName || (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : '');
+    }
+
+    function getAccessiblePatients() {
+      if (!currentAuthUser || currentAuthUser.role !== 'DOCTOR') {
+        return appState.patients || [];
+      }
+      const concernDocName = getConcernDoctorName();
+      if (!concernDocName) return appState.patients || [];
+
+      const docLower = concernDocName.toLowerCase();
+      return (appState.patients || []).filter(p => {
+        const rep = (p.reportingDoctor || '').toLowerCase();
+        return rep === docLower || rep.includes(docLower) || docLower.includes(rep);
+      });
+    }
 
     function applyRolePermissions(role) {
       const normalized = String(role || '').toUpperCase();
@@ -2077,12 +2144,14 @@
       const allowed = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.TECHNICIAN;
 
       if (!allowed.includes(tabId)) {
-        if (tabId === 'registry' || tabId === 'referrals') {
+        if (tabId === 'dashboard') {
+          showToast(`Access Restricted: Executive Dashboard is reserved for Administration.`, "error");
+        } else if (tabId === 'registry' || tabId === 'referrals') {
           showToast(`Access Restricted: Master Patient & Referral Registry is visible to Reception and Admin only.`, "error");
         } else {
           showToast(`Access Restricted: Tab requires elevated permissions.`, "error");
         }
-        tabId = allowed[0] || (userRole === 'DOCTOR' ? 'dashboard' : 'intake');
+        tabId = allowed[0] || (userRole === 'DOCTOR' ? 'writer' : 'intake');
       }
 
       appState.activeTab = tabId;
@@ -2933,12 +3002,16 @@
     function renderReportWriterDropdown() {
       const select = document.getElementById('writer-patient-select');
       if (!select) return;
-      if (!appState.patients.length) {
-        select.innerHTML = `<option value="">No patients registered</option>`;
+      const accessiblePatients = getAccessiblePatients();
+      if (!accessiblePatients.length) {
+        select.innerHTML = `<option value="">No patients assigned to you</option>`;
         return;
       }
-      select.innerHTML = appState.patients.map(p => `<option value="${p.id}" ${appState.selectedPatientForReport === p.id ? 'selected' : ''}>#${p.token} - ${p.name} (${p.modality})</option>`).join('');
-      loadPatientIntoWriter(appState.selectedPatientForReport || appState.patients[0].id);
+      if (!accessiblePatients.some(p => p.id === appState.selectedPatientForReport)) {
+        appState.selectedPatientForReport = accessiblePatients[0].id;
+      }
+      select.innerHTML = accessiblePatients.map(p => `<option value="${p.id}" ${appState.selectedPatientForReport === p.id ? 'selected' : ''}>#${p.token} - ${p.name} (${p.modality})</option>`).join('');
+      loadPatientIntoWriter(appState.selectedPatientForReport);
     }
 
     function loadPatientIntoWriter(id) {
@@ -3024,12 +3097,16 @@
     function renderReportPreviewDropdown() {
       const select = document.getElementById('report-patient-dropdown');
       if (!select) return;
-      if (!appState.patients.length) {
-        select.innerHTML = `<option value="">No patients registered</option>`;
+      const accessiblePatients = getAccessiblePatients();
+      if (!accessiblePatients.length) {
+        select.innerHTML = `<option value="">No patients assigned to you</option>`;
         return;
       }
-      select.innerHTML = appState.patients.map(p => `<option value="${p.id}" ${appState.selectedPatientForReport === p.id ? 'selected' : ''}>#${p.token} - ${p.name} (${p.modality})</option>`).join('');
-      populateReportPreviewModal(appState.selectedPatientForReport || appState.patients[0].id);
+      if (!accessiblePatients.some(p => p.id === appState.selectedPatientForReport)) {
+        appState.selectedPatientForReport = accessiblePatients[0].id;
+      }
+      select.innerHTML = accessiblePatients.map(p => `<option value="${p.id}" ${appState.selectedPatientForReport === p.id ? 'selected' : ''}>#${p.token} - ${p.name} (${p.modality})</option>`).join('');
+      populateReportPreviewModal(appState.selectedPatientForReport);
     }
 
     function handleReportPatientChange(id) {
@@ -3038,13 +3115,29 @@
     }
 
     function viewReportForPatient(id) {
+      if (currentAuthUser?.role === 'DOCTOR') {
+        const accessible = getAccessiblePatients();
+        if (!accessible.some(p => p.id === id)) {
+          showToast("Access Restricted: Patient is not assigned to your account.", "error");
+          return;
+        }
+      }
       appState.selectedPatientForReport = id;
       switchTab('report');
+      populateReportPreviewModal(id);
     }
 
     function editReportForPatient(id) {
+      if (currentAuthUser?.role === 'DOCTOR') {
+        const accessible = getAccessiblePatients();
+        if (!accessible.some(p => p.id === id)) {
+          showToast("Access Restricted: Patient is not assigned to your account.", "error");
+          return;
+        }
+      }
       appState.selectedPatientForReport = id;
       switchTab('writer');
+      loadPatientIntoWriter(id);
     }
 
     function populateReportPreviewModal(id) {
@@ -3348,13 +3441,37 @@
     }
 
     function renderLedgerAndOpex() {
+      const isDoctor = (currentAuthUser?.role === 'DOCTOR');
+      const concernDoc = getConcernDoctorName();
       const docSelect = document.getElementById('ledger-doctor-filter');
-      if (docSelect) {
-        const currentVal = docSelect.value || (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : '');
-        docSelect.innerHTML = (appState.reportingDoctors || []).map(d => `<option value="${d.name}" ${currentVal === d.name ? 'selected' : ''}>${d.name}</option>`).join('');
-      }
+      const docLabel = document.getElementById('ledger-doctor-label');
+      const docBadge = document.getElementById('ledger-doctor-readonly-badge');
+      const docBadgeName = document.getElementById('ledger-doctor-readonly-name');
 
-      const activeDocName = docSelect ? docSelect.value : (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : '');
+      let activeDocName = '';
+
+      if (isDoctor && concernDoc) {
+        activeDocName = concernDoc;
+        if (docSelect) docSelect.style.display = 'none';
+        if (docBadge) {
+          docBadge.classList.remove('hidden');
+          docBadge.style.display = 'inline-flex';
+        }
+        if (docBadgeName) docBadgeName.innerText = `${concernDoc} (My Account Ledger)`;
+        if (docLabel) docLabel.innerText = 'Assigned Ledger:';
+      } else {
+        if (docBadge) {
+          docBadge.classList.add('hidden');
+          docBadge.style.display = 'none';
+        }
+        if (docLabel) docLabel.innerText = 'Select Consultant:';
+        if (docSelect) {
+          docSelect.style.display = '';
+          const currentVal = docSelect.value || (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : '');
+          docSelect.innerHTML = (appState.reportingDoctors || []).map(d => `<option value="${d.name}" ${currentVal === d.name ? 'selected' : ''}>${d.name}</option>`).join('');
+          activeDocName = docSelect.value || (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : '');
+        }
+      }
 
       const docManualEntries = (appState.ledgerEntries || []).filter(le => (le.doctorName || 'Dr. Rayees Ahmad Tarray').toLowerCase() === activeDocName.toLowerCase());
 
@@ -3717,8 +3834,10 @@
     }
 
     function printConsultantLedgerStatement() {
+      const isDoctor = (currentAuthUser?.role === 'DOCTOR');
+      const concernDoc = getConcernDoctorName();
       const docSelect = document.getElementById('ledger-doctor-filter');
-      const activeDocName = docSelect ? docSelect.value : (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : 'Dr. Rayees Ahmad Tarray');
+      const activeDocName = (isDoctor && concernDoc) ? concernDoc : (docSelect ? docSelect.value : (appState.reportingDoctors[0] ? appState.reportingDoctors[0].name : 'Dr. Rayees Ahmad Tarray'));
       const activeDoc = (appState.reportingDoctors || []).find(d => d.name === activeDocName) || { name: activeDocName, designation: 'Consultant Neurologist', qualification: 'DM Neurology', regNo: 'JKMC-REG-2026' };
       const st = appState.settings;
 
@@ -3925,6 +4044,13 @@
       if (sideRole) sideRole.innerText = role;
 
       applyRolePermissions(role);
+      // Auto-switch away from restricted tab for doctors
+      if (role === 'DOCTOR') {
+        const allowed = ROLE_PERMISSIONS.DOCTOR;
+        if (!allowed.includes(appState.activeTab)) {
+          switchTab('writer');
+        }
+      }
       // Update reporting doctor dropdowns if logged in doctor
       if (role === 'DOCTOR' && currentAuthUser.fullName) {
         const docName = currentAuthUser.fullName;
