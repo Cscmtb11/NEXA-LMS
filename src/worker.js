@@ -263,6 +263,14 @@ async function authenticateUser(request, db) {
     return null;
   }
 
+  // Check organization status for non-superadmin users
+  if (session.role !== 'SUPER_ADMIN' && session.tenant_id && session.tenant_id !== 'master') {
+    const tenant = await db.prepare("SELECT status FROM tenants WHERE id = ?").bind(session.tenant_id).first();
+    if (tenant && tenant.status !== 'ACTIVE') {
+      return null; // Tenant is on HOLD or SUSPENDED
+    }
+  }
+
   return {
     id: session.id,
     username: session.username,
@@ -475,6 +483,28 @@ export default {
 
       await ensureD1Schema(env.DB);
 
+      // STRICT PRIVACY PROTECTION: Block Master Super Admin from accessing patient/clinical personal data
+      if (
+        url.pathname === '/api/state' ||
+        url.pathname === '/api/patients' ||
+        url.pathname.startsWith('/api/patients/') ||
+        url.pathname === '/api/ledger' ||
+        url.pathname.startsWith('/api/ledger/') ||
+        url.pathname === '/api/expenses' ||
+        url.pathname.startsWith('/api/expenses/') ||
+        url.pathname === '/api/referral-partners' ||
+        url.pathname.startsWith('/api/referral-partners/') ||
+        url.pathname === '/api/referral-payouts' ||
+        url.pathname.startsWith('/api/referral-payouts/')
+      ) {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (currentUser && currentUser.role === 'SUPER_ADMIN') {
+          return jsonResponse({
+            error: 'Access Denied: Master Platform Administrator is restricted from accessing confidential patient & clinical personal data. Master scope is strictly limited to Organization and Admin user lifecycle management.'
+          }, 403);
+        }
+      }
+
       // GET /api/health
       if (url.pathname === '/api/health') {
         const test = await env.DB.prepare("SELECT 1 as alive").first();
@@ -503,13 +533,14 @@ export default {
           SELECT 
             t.id, t.name, t.slug, t.plan, t.status, t.created_at,
             fs.parent_entity, fs.address, fs.phones, fs.vpa,
-            (SELECT COUNT(*) FROM patients p WHERE p.tenant_id = t.id) as patient_count,
-            (SELECT COUNT(*) FROM reporting_doctors d WHERE d.tenant_id = t.id) as doctor_count,
             (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id) as user_count,
+            (SELECT full_name FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_full_name,
             (SELECT username FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_username,
-            (SELECT email FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_email
+            (SELECT email FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_email,
+            (SELECT status FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_status
           FROM tenants t
           LEFT JOIN facility_settings fs ON fs.tenant_id = t.id
+          WHERE t.id != 'master'
           ORDER BY t.created_at DESC
         `).all();
 
@@ -594,6 +625,46 @@ export default {
           adminUser: { id: adminId, username: adminUsername, email: adminEmail, fullName: adminName, role: 'ADMIN' },
           message: `Diagnostic Organization '${name}' provisioned successfully!`
         }, 201);
+      }
+
+      // PUT /api/master/tenants/:id/status - Hold / Suspend / Activate Tenant (Master Admin Only)
+      if (url.pathname.startsWith('/api/master/tenants/') && url.pathname.endsWith('/status') && request.method === 'PUT') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[4];
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const status = String(body.status || 'ACTIVE').toUpperCase();
+        if (!['ACTIVE', 'HOLD', 'SUSPENDED'].includes(status)) {
+          return jsonResponse({ error: 'Status must be ACTIVE, HOLD, or SUSPENDED.' }, 400);
+        }
+
+        await env.DB.prepare("UPDATE tenants SET status = ? WHERE id = ?").bind(status, id).run();
+        return jsonResponse({ ok: true, status, message: `Organization status set to ${status}.` });
+      }
+
+      // PUT /api/master/tenants/:id/admin-status - Hold / Activate Organisation Admin User (Master Admin Only)
+      if (url.pathname.startsWith('/api/master/tenants/') && url.pathname.endsWith('/admin-status') && request.method === 'PUT') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[4];
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const status = String(body.status || 'ACTIVE').toUpperCase();
+        if (!['ACTIVE', 'HOLD', 'SUSPENDED', 'INACTIVE'].includes(status)) {
+          return jsonResponse({ error: 'Status must be ACTIVE, HOLD, or INACTIVE.' }, 400);
+        }
+
+        await env.DB.prepare("UPDATE users SET status = ? WHERE tenant_id = ? AND role = 'ADMIN'").bind(status, id).run();
+        return jsonResponse({ ok: true, adminStatus: status, message: `Admin user status set to ${status}.` });
       }
 
       // PUT /api/master/tenants/:id - Update tenant subscription/details (Master Admin Only)
@@ -737,6 +808,16 @@ export default {
         const calculatedHash = await hashPassword(password, user.password_salt);
         if (calculatedHash !== user.password_hash) {
           return jsonResponse({ error: 'Invalid username, email or password.' }, 401);
+        }
+
+        // If not SUPER_ADMIN, check if organization is on HOLD or SUSPENDED
+        if (user.role !== 'SUPER_ADMIN' && user.tenant_id && user.tenant_id !== 'master') {
+          const tenant = await env.DB.prepare("SELECT * FROM tenants WHERE id = ?").bind(user.tenant_id).first();
+          if (tenant && tenant.status !== 'ACTIVE') {
+            return jsonResponse({
+              error: `Access Blocked: Your clinic organization (${tenant.name}) has been placed on ${tenant.status} by platform administration. Contact support@springnexa.in.`
+            }, 403);
+          }
         }
 
         const token = generateToken();

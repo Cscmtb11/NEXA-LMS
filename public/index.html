@@ -261,21 +261,6 @@
       </div>
     </header>
 
-    <!-- MASTER ADMIN ACTIVE WORKSPACE BANNER -->
-    <div id="master-admin-banner" class="hidden bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-6 py-2.5 flex items-center justify-between text-xs font-bold shadow-sm shrink-0 z-10">
-      <div class="flex items-center gap-2.5">
-        <span class="px-2 py-0.5 rounded bg-black/25 text-amber-100 text-[10px] font-mono font-bold tracking-wider uppercase">SPRINGNEXA MASTER MODE</span>
-        <span>Controlling Clinic Workstation: <strong id="master-banner-tenant-name" class="underline underline-offset-2">Al-Jawahira</strong></span>
-        <span id="master-banner-tenant-slug" class="px-2 py-0.5 rounded-full bg-white/20 text-white font-mono text-[10px]">default</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="exitTenantWorkstation()" class="px-3 py-1 rounded-lg bg-slate-950 hover:bg-slate-900 text-amber-200 text-xs font-bold transition flex items-center gap-1.5 shadow">
-          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-          <span>Exit to Master SaaS Hub</span>
-        </button>
-      </div>
-    </div>
-
     <!-- SCROLLABLE VIEWPORT -->
     <main id="main-content" class="flex-1 overflow-y-auto p-6 space-y-6">
 
@@ -289,25 +274,28 @@
         <!-- Hero Header -->
         <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-amber-500/20">
           <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold uppercase tracking-wider">
                 👑 Super Admin Platform Hub
               </span>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold uppercase tracking-wider">
+                🔒 Zero-Knowledge Privacy Architecture
+              </span>
               <span class="text-xs text-slate-400 font-mono">admin@springnexa.in</span>
             </div>
-            <h2 class="text-xl font-extrabold tracking-tight">SpringNexa SaaS Multi-Tenant Control Center</h2>
+            <h2 class="text-xl font-extrabold tracking-tight">SpringNexa SaaS Multi-Tenant Platform Control</h2>
             <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              Centrally provision, monitor, and manage clinical diagnostic workstations. Inspect telemetry, update subscription tiers, and provide direct technical support to tenant clinics.
+              Centrally manage clinic organizations, enforce Hold/Suspend states, and manage Organization Admin users. (Confidential patient records & personal clinical data are strictly isolated and restricted).
             </p>
           </div>
           <div class="flex items-center gap-2.5 shrink-0">
             <button onclick="loadMasterTenants()" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center gap-2 border border-white/10">
               <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span>Refresh Telemetry</span>
+              <span>Refresh Registry</span>
             </button>
             <button onclick="openMasterAddTenantModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 text-xs font-extrabold shadow-lg shadow-orange-500/20 transition flex items-center gap-2">
               <i data-lucide="plus-circle" class="w-4 h-4"></i>
-              <span>+ Provision Clinic Tenant</span>
+              <span>+ Add Organization</span>
             </button>
           </div>
         </div>
@@ -320,34 +308,34 @@
               <i data-lucide="building-2" class="w-4 h-4 text-brand-600"></i>
             </div>
             <p id="master-kpi-total-tenants" class="text-2xl font-black text-slate-900 font-mono">0</p>
-            <p class="text-[10px] text-slate-400">Registered diagnostic clinics</p>
+            <p class="text-[10px] text-slate-400">Configured clinic facilities</p>
           </div>
 
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-1">
             <div class="flex items-center justify-between text-slate-500 text-xs font-semibold">
-              <span>Active Subscriptions</span>
+              <span>Active Organizations</span>
               <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
             </div>
             <p id="master-kpi-active-tenants" class="text-2xl font-black text-emerald-600 font-mono">0</p>
-            <p class="text-[10px] text-emerald-600 font-medium">Live D1 isolated databases</p>
+            <p class="text-[10px] text-emerald-600 font-medium">Permitted login & operations</p>
           </div>
 
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-1">
             <div class="flex items-center justify-between text-slate-500 text-xs font-semibold">
-              <span>Platform Patients</span>
-              <i data-lucide="users" class="w-4 h-4 text-indigo-600"></i>
+              <span>Held / Suspended</span>
+              <i data-lucide="pause-circle" class="w-4 h-4 text-amber-600"></i>
             </div>
-            <p id="master-kpi-total-patients" class="text-2xl font-black text-slate-900 font-mono">0</p>
-            <p class="text-[10px] text-slate-400">Cumulative patient telemetry</p>
+            <p id="master-kpi-held-tenants" class="text-2xl font-black text-amber-600 font-mono">0</p>
+            <p class="text-[10px] text-amber-600 font-medium">Temporarily paused access</p>
           </div>
 
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-1">
             <div class="flex items-center justify-between text-slate-500 text-xs font-semibold">
-              <span>Reporting Specialists</span>
-              <i data-lucide="stethoscope" class="w-4 h-4 text-amber-600"></i>
+              <span>Org Admin Accounts</span>
+              <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i>
             </div>
-            <p id="master-kpi-total-doctors" class="text-2xl font-black text-amber-700 font-mono">0</p>
-            <p class="text-[10px] text-slate-400">Active medical consultants</p>
+            <p id="master-kpi-total-admins" class="text-2xl font-black text-indigo-700 font-mono">0</p>
+            <p class="text-[10px] text-slate-400">Clinic administrators provisioned</p>
           </div>
         </div>
 
@@ -356,11 +344,11 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
-                <i data-lucide="database" class="w-4 h-4"></i>
+                <i data-lucide="building" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="text-sm font-bold text-slate-900">Provisioned Clinic Workspaces Directory</h3>
-                <p class="text-xs text-slate-500">Full platform registry with real-time database row counts</p>
+                <h3 class="text-sm font-bold text-slate-900">Organizations & Administrator Directory</h3>
+                <p class="text-xs text-slate-500">Hold, suspend, remove, edit, or reset clinic admin credentials</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -373,16 +361,16 @@
               <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
                   <th class="py-3 px-3">Clinic Organization</th>
-                  <th class="py-3 px-3">SaaS Plan</th>
-                  <th class="py-3 px-3 text-center">Status</th>
-                  <th class="py-3 px-3 text-center">Usage Telemetry</th>
+                  <th class="py-3 px-3">Subscription Tier</th>
+                  <th class="py-3 px-3 text-center">Org Status</th>
+                  <th class="py-3 px-3">Organization Admin User</th>
+                  <th class="py-3 px-3 text-center">Admin Status</th>
                   <th class="py-3 px-3">Facility Contact</th>
-                  <th class="py-3 px-3">Clinic Administrator</th>
-                  <th class="py-3 px-3 text-center">Actions</th>
+                  <th class="py-3 px-3 text-center">Lifecycle Actions</th>
                 </tr>
               </thead>
               <tbody id="master-tenants-tbody" class="divide-y divide-slate-100 text-slate-700 font-medium">
-                <tr><td colspan="7" class="py-8 text-center text-slate-400">Loading platform tenants...</td></tr>
+                <tr><td colspan="7" class="py-8 text-center text-slate-400">Loading organizations...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2204,7 +2192,7 @@
     // ROLE-BASED ACCESS CONTROL (RBAC) LOGIC
     // ==========================================
     const ROLE_PERMISSIONS = {
-      SUPER_ADMIN: ['master-tenants', 'dashboard', 'intake', 'registry', 'referrals', 'writer', 'tariff', 'report', 'ledger', 'doctor', 'settings', 'users'],
+      SUPER_ADMIN: ['master-tenants'],
       ADMIN: ['dashboard', 'intake', 'registry', 'referrals', 'writer', 'tariff', 'report', 'ledger', 'doctor', 'settings', 'users'],
       RECEPTION: ['intake', 'registry', 'referrals', 'report'],
       RECEPTIONIST: ['intake', 'registry', 'referrals', 'report'],
@@ -2253,12 +2241,39 @@
     function applyRolePermissions(role) {
       const normalized = String(role || '').toUpperCase();
       const isSuper = (normalized === 'SUPER_ADMIN');
-      const isAdmin = (normalized === 'ADMIN' || isSuper);
+      const isAdmin = (normalized === 'ADMIN');
       const isReception = (normalized === 'RECEPTION' || normalized === 'RECEPTIONIST');
       const canViewRegistry = (isAdmin || isReception);
 
       const navMasterTenants = document.getElementById('nav-master-tenants');
       if (navMasterTenants) navMasterTenants.style.display = isSuper ? '' : 'none';
+
+      // Hide or show sidebar category headers and clinical buttons for Super Admin
+      const sidebarCatHeaders = document.querySelectorAll('#app-sidebar p.tracking-wider');
+      sidebarCatHeaders.forEach(el => {
+        el.style.display = isSuper ? 'none' : '';
+      });
+
+      // Topbar buttons visibility: hide clinical action buttons for Super Admin
+      const topIntakeBtn = document.querySelector("button[onclick*='switchTab(\'intake\')']");
+      const topCloudBtn = document.getElementById('btn-cloud-sync');
+      const topExcelBtn = document.querySelector("button[onclick*='exportFullExcelWorkbook']");
+      const topBackupBtn = document.querySelector("button[onclick*='triggerQuickJsonBackup']");
+
+      if (topIntakeBtn) topIntakeBtn.style.display = isSuper ? 'none' : '';
+      if (topCloudBtn) topCloudBtn.style.display = isSuper ? 'none' : '';
+      if (topExcelBtn) topExcelBtn.style.display = isSuper ? 'none' : '';
+      if (topBackupBtn) topBackupBtn.style.display = isSuper ? 'none' : '';
+
+      const topTitle = document.getElementById('topbar-facility-title');
+      const topSub = document.getElementById('topbar-facility-sub');
+      if (isSuper) {
+        if (topTitle) topTitle.innerText = "SPRINGNEXA SAAS PLATFORM ADMINISTRATION";
+        if (topSub) topSub.innerText = "Master Control Hub • Personal & Clinical Data Restricted";
+      } else {
+        if (topTitle) topTitle.innerText = appState.settings?.facilityName || "AL JAWAHIRA ELECTROPHYSIOLOGY";
+        if (topSub) topSub.innerText = appState.settings?.parentEntity || "Center For NeuroDiagnostics • Operated by SpringNexa";
+      }
 
       // 1. Enforce OPEX visibility (ONLY visible in ADMIN login)
       const opexKpi = document.getElementById('kpi-opex-container');
@@ -4304,19 +4319,7 @@
         else if (role === 'DOCTOR') topRole.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold uppercase';
         else topRole.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold uppercase';
 
-        // Master Admin inspection banner visibility
-        const masterBanner = document.getElementById('master-admin-banner');
-        if (masterBanner) {
-          if (role === 'SUPER_ADMIN' && appState.inspectedTenantId) {
-            masterBanner.classList.remove('hidden');
-            const nameEl = document.getElementById('master-banner-tenant-name');
-            const slugEl = document.getElementById('master-banner-tenant-slug');
-            if (nameEl) nameEl.innerText = appState.inspectedTenantName || appState.inspectedTenantId;
-            if (slugEl) slugEl.innerText = appState.inspectedTenantId;
-          } else {
-            masterBanner.classList.add('hidden');
-          }
-        }
+
       }
 
       const sideAvatar = document.getElementById('sidebar-avatar');
@@ -4371,12 +4374,13 @@
 
     // ==========================================
     // SPRINGNEXA MASTER SAAS PLATFORM FUNCTIONS
+    // STRICT SCOPE: Organizations & Admin Users ONLY (No Personal/Clinical Data)
     // ==========================================
     let masterTenantsCache = [];
 
     async function loadMasterTenants() {
       const tbody = document.getElementById('master-tenants-tbody');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">Loading platform tenant telemetry...</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">Loading organizations...</td></tr>`;
 
       try {
         const res = await fetch('/api/master/tenants', { headers: getAuthHeaders() });
@@ -4386,7 +4390,7 @@
           renderMasterTenantsTable(data.tenants);
           updateMasterMetrics(data.tenants);
         } else {
-          if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-rose-500">${data.error || 'Failed to fetch tenants.'}</td></tr>`;
+          if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-rose-500">${data.error || 'Failed to fetch organizations.'}</td></tr>`;
         }
       } catch (err) {
         if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-rose-500">Could not communicate with Cloudflare D1.</td></tr>`;
@@ -4394,25 +4398,25 @@
     }
 
     function updateMasterMetrics(tenants) {
-      let totalPatients = 0;
-      let totalDoctors = 0;
-      let activeTenants = 0;
+      let activeCount = 0;
+      let heldCount = 0;
+      let adminCount = 0;
 
       tenants.forEach(t => {
-        if (t.status === 'ACTIVE') activeTenants++;
-        totalPatients += Number(t.patient_count) || 0;
-        totalDoctors += Number(t.doctor_count) || 0;
+        if (t.status === 'ACTIVE') activeCount++;
+        else heldCount++;
+        if (t.admin_username) adminCount++;
       });
 
       const totalEl = document.getElementById('master-kpi-total-tenants');
       const activeEl = document.getElementById('master-kpi-active-tenants');
-      const patEl = document.getElementById('master-kpi-total-patients');
-      const docEl = document.getElementById('master-kpi-total-doctors');
+      const heldEl = document.getElementById('master-kpi-held-tenants');
+      const adminEl = document.getElementById('master-kpi-total-admins');
 
       if (totalEl) totalEl.innerText = tenants.length;
-      if (activeEl) activeEl.innerText = activeTenants;
-      if (patEl) patEl.innerText = totalPatients;
-      if (docEl) docEl.innerText = totalDoctors;
+      if (activeEl) activeEl.innerText = activeCount;
+      if (heldEl) heldEl.innerText = heldCount;
+      if (adminEl) adminEl.innerText = adminCount;
     }
 
     function renderMasterTenantsTable(tenants) {
@@ -4420,17 +4424,18 @@
       if (!tbody) return;
 
       if (!tenants || !tenants.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No organizations found. Click "+ Provision Clinic Tenant" to add your first clinic.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No organizations registered. Click "+ Add Organization" to provision a new clinic.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = tenants.map(t => {
-        const isActive = t.status === 'ACTIVE';
+        const isHeld = (t.status === 'HOLD' || t.status === 'SUSPENDED');
+        const isAdminHeld = (t.admin_status === 'HOLD' || t.admin_status === 'INACTIVE');
         return `
-          <tr class="hover:bg-slate-50 transition">
+          <tr class="hover:bg-slate-50 transition ${isHeld ? 'bg-amber-50/20' : ''}">
             <td class="py-3 px-3">
               <p class="font-extrabold text-slate-900">${t.name}</p>
-              <p class="text-[10px] text-slate-400 font-mono">${t.id} • ${t.parent_entity || 'Independent Lab'}</p>
+              <p class="text-[10px] text-slate-400 font-mono">${t.id} • ${t.parent_entity || 'Independent Facility'}</p>
             </td>
             <td class="py-3 px-3">
               <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
@@ -4441,34 +4446,44 @@
             </td>
             <td class="py-3 px-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                t.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                t.status === 'HOLD' ? 'bg-amber-50 text-amber-800 border border-amber-300' :
+                'bg-rose-50 text-rose-700 border border-rose-200'
               }">${t.status || 'ACTIVE'}</span>
             </td>
-            <td class="py-3 px-3 text-center font-mono">
-              <span class="font-bold text-brand-700">${t.patient_count || 0}</span> <span class="text-slate-400 text-[10px]">pts</span> /
-              <span class="font-bold text-amber-700">${t.doctor_count || 0}</span> <span class="text-slate-400 text-[10px]">docs</span>
+            <td class="py-3 px-3 text-[11px]">
+              <p class="font-bold text-slate-900">${t.admin_full_name || 'Clinic Director'}</p>
+              <p class="font-mono text-slate-500 text-[10px]">${t.admin_username || 'admin'} • ${t.admin_email || 'admin@clinic.com'}</p>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                !isAdminHeld ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+              }">${isAdminHeld ? 'HELD' : 'ACTIVE'}</span>
             </td>
             <td class="py-3 px-3 text-[11px]">
-              <p class="text-slate-800">${t.address || 'Diagnostic Clinic'}</p>
-              <p class="text-[10px] text-slate-400 font-mono">${t.phones || 'No phone logged'}</p>
-            </td>
-            <td class="py-3 px-3 text-[11px]">
-              <p class="font-bold font-mono text-slate-900">${t.admin_username || 'admin'}</p>
-              <p class="text-[10px] text-slate-400">${t.admin_email || 'admin@clinic.com'}</p>
+              <p class="text-slate-800">${t.address || 'Facility'}</p>
+              <p class="text-[10px] text-slate-400 font-mono">${t.phones || '-'}</p>
             </td>
             <td class="py-3 px-3 text-center space-x-1 whitespace-nowrap">
-              <button onclick="enterTenantWorkstation('${t.id}', '${encodeURIComponent(t.name)}', '${t.slug}')" title="Inspect this clinic workstation in Master Admin mode" class="px-2.5 py-1 rounded bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-[11px] transition">
-                Launch
+              <button onclick="handleToggleTenantStatus('${t.id}', '${t.status}')" class="px-2.5 py-1 rounded ${
+                t.status === 'ACTIVE' ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'
+              } font-bold text-[11px] transition">
+                ${t.status === 'ACTIVE' ? 'Hold' : 'Activate'}
               </button>
-              <button onclick="openMasterEditTenantModal('${t.id}')" title="Edit organization details and plan" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
+              <button onclick="openMasterEditTenantModal('${t.id}')" title="Edit organization details" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
                 Edit
               </button>
-              <button onclick="openMasterResetAdminModal('${t.id}', '${encodeURIComponent(t.name)}')" title="Reset Clinic Administrator Password" class="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] transition">
-                Key
+              <button onclick="openMasterResetAdminModal('${t.id}', '${encodeURIComponent(t.name)}')" title="Reset Clinic Administrator Password" class="px-2.5 py-1 rounded bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-[11px] transition">
+                Reset Admin Key
               </button>
-              <button onclick="toggleTenantStatus('${t.id}', '${t.status}')" class="px-2 py-1 rounded ${isActive ? 'bg-rose-50 hover:bg-rose-100 text-rose-700' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'} font-bold text-[11px] transition">
-                ${isActive ? 'Suspend' : 'Activate'}
+              <button onclick="handleToggleAdminStatus('${t.id}', '${t.admin_status}')" title="Hold or Activate Admin user" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] transition">
+                ${isAdminHeld ? 'Unhold Admin' : 'Hold Admin'}
               </button>
+              ${t.id !== 'default' ? `
+                <button onclick="handleDeleteTenant('${t.id}', '${encodeURIComponent(t.name)}')" title="Remove organization" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] transition">
+                  Remove
+                </button>
+              ` : ''}
             </td>
           </tr>
         `;
@@ -4510,7 +4525,7 @@
       const adminUsername = document.getElementById('madd-admin-user').value.trim();
       const adminPassword = document.getElementById('madd-admin-pass').value.trim();
 
-      if (!name || !slug) return showToast("Facility Name and slug are required.", "error");
+      if (!name || !slug) return showToast("Facility Name and unique slug are required.", "error");
 
       try {
         const payload = {
@@ -4526,9 +4541,9 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to provision clinic.');
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to provision organization.');
 
-        showToast(`Clinic "${name}" successfully provisioned on D1!`);
+        showToast(`Organization "${name}" successfully added!`);
         closeMasterAddTenantModal();
         loadMasterTenants();
       } catch (err) {
@@ -4576,11 +4591,54 @@
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Update failed.');
 
-        showToast("Clinic tenant updated successfully!");
+        showToast("Organization details updated successfully!");
         closeMasterEditTenantModal();
         loadMasterTenants();
       } catch (err) {
         showToast(err.message, 'error');
+      }
+    }
+
+    async function handleToggleTenantStatus(tenantId, currentStatus) {
+      const newStatus = (currentStatus === 'ACTIVE') ? 'HOLD' : 'ACTIVE';
+      const actionLabel = (newStatus === 'HOLD') ? 'put on HOLD' : 'ACTIVATE';
+      if (!confirm(`Are you sure you want to ${actionLabel} this organization?`)) return;
+
+      try {
+        const res = await fetch(`/api/master/tenants/${tenantId}/status`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`Organization status set to ${newStatus}.`);
+          loadMasterTenants();
+        } else {
+          showToast(data.error || 'Failed to update organization status.', 'error');
+        }
+      } catch (e) {
+        showToast('Error communicating with Cloudflare D1.', 'error');
+      }
+    }
+
+    async function handleToggleAdminStatus(tenantId, currentStatus) {
+      const newStatus = (currentStatus === 'ACTIVE') ? 'HOLD' : 'ACTIVE';
+      try {
+        const res = await fetch(`/api/master/tenants/${tenantId}/admin-status`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`Clinic Administrator user status set to ${newStatus}.`);
+          loadMasterTenants();
+        } else {
+          showToast(data.error || 'Failed to update admin user status.', 'error');
+        }
+      } catch (e) {
+        showToast('Error communicating with Cloudflare D1.', 'error');
       }
     }
 
@@ -4617,55 +4675,32 @@
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Password reset failed.');
 
-        showToast("Tenant administrator password successfully reset!");
+        showToast("Clinic Administrator password updated successfully!");
         closeMasterResetAdminModal();
       } catch (err) {
         showToast(err.message, 'error');
       }
     }
 
-    async function toggleTenantStatus(tenantId, currentStatus) {
-      const newStatus = (currentStatus === 'ACTIVE') ? 'SUSPENDED' : 'ACTIVE';
+    async function handleDeleteTenant(tenantId, encodedName) {
+      const name = decodeURIComponent(encodedName || tenantId);
+      if (!confirm(`Are you sure you want to permanently remove organization "${name}"? This will delete the organization and its user credentials.`)) return;
+
       try {
-        const res = await fetch(`/api/master/tenants/${tenantId}`, {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ status: newStatus })
+        const res = await fetch(`/api/master/tenants/${tenantId}?purge=true`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
         });
         const data = await res.json();
         if (data.ok) {
-          showToast(`Tenant status set to ${newStatus}`);
+          showToast(`Organization "${name}" removed successfully.`);
           loadMasterTenants();
         } else {
-          showToast(data.error || 'Failed to update status', 'error');
+          showToast(data.error || 'Failed to delete organization.', 'error');
         }
       } catch (e) {
-        showToast('Network error updating status.', 'error');
+        showToast('Error communicating with Cloudflare D1.', 'error');
       }
-    }
-
-    async function enterTenantWorkstation(tenantId, encodedName, slug) {
-      const name = decodeURIComponent(encodedName || tenantId);
-      appState.inspectedTenantId = tenantId;
-      appState.inspectedTenantName = name;
-      appState.inspectedTenantSlug = slug;
-      saveState();
-
-      updateAuthUI();
-      showToast(`Master Admin: controlling ${name} workstation...`);
-      await syncWithCloudflareD1();
-      switchTab('dashboard');
-    }
-
-    async function exitTenantWorkstation() {
-      appState.inspectedTenantId = null;
-      appState.inspectedTenantName = null;
-      appState.inspectedTenantSlug = null;
-      saveState();
-
-      updateAuthUI();
-      showToast("Returned to SpringNexa Master SaaS Hub.");
-      switchTab('master-tenants');
     }
 
     async function handleUserLogin(e) {
