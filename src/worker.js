@@ -83,6 +83,8 @@ async function ensureD1Schema(db) {
         password_hash TEXT NOT NULL,
         password_salt TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'ACTIVE',
+        must_change_password INTEGER NOT NULL DEFAULT 1,
+        password_changed_at TEXT,
         last_login_at TEXT,
         created_at TEXT NOT NULL
       )
@@ -214,6 +216,10 @@ async function ensureD1Schema(db) {
     `)
   ]);
 
+  // Ensure user password columns exist
+  try { await db.prepare("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1").run(); } catch (_) {}
+  try { await db.prepare("ALTER TABLE users ADD COLUMN password_changed_at TEXT").run(); } catch (_) {}
+
   // Ensure default primary tenant
   const now = new Date().toISOString();
   await db.prepare(`
@@ -251,7 +257,7 @@ async function authenticateUser(request, db) {
   if (!token) return null;
 
   const session = await db.prepare(`
-    SELECT s.token, s.expires_at, u.id, u.username, u.email, u.full_name, u.role, u.tenant_id
+    SELECT s.token, s.expires_at, u.id, u.username, u.email, u.full_name, u.role, u.tenant_id, u.must_change_password
     FROM user_sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.token = ? AND u.status = 'ACTIVE'
@@ -277,7 +283,8 @@ async function authenticateUser(request, db) {
     email: session.email,
     fullName: session.full_name,
     role: session.role,
-    tenantId: session.tenant_id || 'default'
+    tenantId: session.tenant_id || 'default',
+    mustChangePassword: session.must_change_password === 1
   };
 }
 
@@ -606,8 +613,8 @@ export default {
           ),
 
           env.DB.prepare(`
-            INSERT INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, created_at)
-            VALUES (?, ?, ?, ?, ?, 'ADMIN', ?, ?, 'ACTIVE', ?)
+            INSERT INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, must_change_password, created_at)
+            VALUES (?, ?, ?, ?, ?, 'ADMIN', ?, ?, 'ACTIVE', 1, ?)
           `).bind(adminId, tenantId, adminUsername, adminEmail, adminName, passwordHash, salt, now)
         ]);
 
@@ -727,7 +734,7 @@ export default {
 
         await env.DB.prepare(`
           UPDATE users
-          SET password_hash = ?, password_salt = ?
+          SET password_hash = ?, password_salt = ?, must_change_password = 1
           WHERE tenant_id = ? AND role = 'ADMIN'
         `).bind(hash, salt, id).run();
 
@@ -792,7 +799,7 @@ export default {
         }
 
         const user = await env.DB.prepare(`
-          SELECT id, tenant_id, username, email, full_name, role, password_hash, password_salt, status
+          SELECT id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, must_change_password, last_login_at
           FROM users
           WHERE (lower(username) = ? OR lower(email) = ?)
         `).bind(usernameOrEmail, usernameOrEmail).first();
@@ -843,7 +850,8 @@ export default {
             email: user.email,
             fullName: user.full_name,
             role: user.role,
-            tenantId: user.tenant_id || 'default'
+            tenantId: user.tenant_id || 'default',
+            mustChangePassword: (user.must_change_password === 1 || !user.last_login_at) ? true : false
           },
           tenant: tenant ? {
             id: tenant.id,
@@ -873,6 +881,61 @@ export default {
           await env.DB.prepare("DELETE FROM user_sessions WHERE token = ?").bind(token).run();
         }
         return jsonResponse({ ok: true, message: 'Logged out successfully.' });
+      }
+
+      // POST /api/auth/change-password - Change current user's password (first login or profile change)
+      if (url.pathname === '/api/auth/change-password' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser) {
+          return jsonResponse({ error: 'Unauthenticated session.' }, 401);
+        }
+
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+        const currentPassword = String(body.currentPassword || '');
+        const newPassword = String(body.newPassword || '');
+
+        if (!currentPassword || !newPassword) {
+          return jsonResponse({ error: 'Both current password and new password are required.' }, 400);
+        }
+
+        if (newPassword.length < 6) {
+          return jsonResponse({ error: 'New password must be at least 6 characters long.' }, 400);
+        }
+
+        if (currentPassword === newPassword) {
+          return jsonResponse({ error: 'New password must be different from your current password.' }, 400);
+        }
+
+        const user = await env.DB.prepare(`
+          SELECT id, password_hash, password_salt
+          FROM users
+          WHERE id = ?
+        `).bind(currentUser.id).first();
+
+        if (!user) {
+          return jsonResponse({ error: 'User account not found.' }, 404);
+        }
+
+        const calculatedHash = await hashPassword(currentPassword, user.password_salt);
+        if (calculatedHash !== user.password_hash) {
+          return jsonResponse({ error: 'Current password is incorrect. Please verify and try again.' }, 400);
+        }
+
+        const newSalt = 'salt_' + crypto.randomUUID().slice(0, 8);
+        const newHash = await hashPassword(newPassword, newSalt);
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          UPDATE users
+          SET password_hash = ?, password_salt = ?, must_change_password = 0, password_changed_at = ?
+          WHERE id = ?
+        `).bind(newHash, newSalt, now, user.id).run();
+
+        return jsonResponse({
+          ok: true,
+          message: 'Password changed successfully! You may now use your new password.'
+        });
       }
 
       // GET /api/users - List users for current tenant
@@ -911,8 +974,8 @@ export default {
         const now = new Date().toISOString();
 
         await env.DB.prepare(`
-          INSERT INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+          INSERT INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, must_change_password, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', 1, ?)
         `).bind(id, tenantId, username, email, fullName, role, passwordHash, salt, now).run();
 
         return jsonResponse({ ok: true, id, message: `Operator ${username} registered successfully.` }, 201);

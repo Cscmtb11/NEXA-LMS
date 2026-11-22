@@ -220,9 +220,14 @@
           <p id="sidebar-userrole" class="text-[10px] text-slate-400 font-mono uppercase">DOCTOR</p>
         </div>
       </div>
-      <button onclick="handleUserLogout()" title="Log Out" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition">
-        <i data-lucide="log-out" class="w-4 h-4"></i>
-      </button>
+      <div class="flex items-center gap-1">
+        <button onclick="openChangePasswordModal(false)" title="Change Password" class="text-slate-400 hover:text-amber-400 p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="key" class="w-4 h-4"></i>
+        </button>
+        <button onclick="handleUserLogout()" title="Log Out" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -289,7 +294,10 @@
             <p id="topbar-username" class="text-xs font-bold text-slate-900 leading-tight">Dr. Rayees Ahmad</p>
             <span id="topbar-userrole" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold uppercase">DOCTOR</span>
           </div>
-          <button onclick="handleUserLogout()" title="Log out from clinical station" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition ml-1">
+          <button onclick="openChangePasswordModal(false)" title="Change Account Password" class="p-2 rounded-xl bg-slate-100 hover:bg-amber-50 hover:text-amber-600 text-slate-600 transition ml-1">
+            <i data-lucide="key" class="w-4 h-4"></i>
+          </button>
+          <button onclick="handleUserLogout()" title="Log out from clinical station" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition">
             <i data-lucide="log-out" class="w-4 h-4"></i>
           </button>
         </div>
@@ -1599,7 +1607,7 @@
           <label class="block font-bold text-slate-700 mb-1">Username or Work Email</label>
           <div class="relative">
             <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
-            <input type="text" id="login-username" required placeholder="admin or dr.rayees or tech.kulgam" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+            <input type="text" id="login-username" required placeholder="Enter username or work email" autocomplete="username" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
           </div>
         </div>
 
@@ -1607,7 +1615,7 @@
           <label class="block font-bold text-slate-700 mb-1">Password</label>
           <div class="relative">
             <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
-            <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+            <input type="password" id="login-password" required placeholder="Enter password" autocomplete="current-password" class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
             <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 focus:outline-none">
               <i data-lucide="eye" id="login-pwd-toggle" class="w-4 h-4"></i>
             </button>
@@ -1622,47 +1630,64 @@
         </div>
       </form>
 
-      <!-- One-Click Quick Login Presets for Clinical Operators -->
-      <div class="pt-4 border-t border-slate-100 space-y-2.5">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">1-Click Quick Operator Switch</p>
-        <button type="button" onclick="quickFillLogin('admin@springnexa.in', 'SpringNexa@2026')" class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border border-amber-300 hover:border-amber-400 rounded-xl text-left transition flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-            <div>
-              <p class="font-extrabold text-amber-950 text-xs">SpringNexa Platform Master Admin</p>
-              <p class="text-[10px] text-amber-800 font-mono">admin@springnexa.in • SpringNexa@2026</p>
-            </div>
-          </div>
-          <span class="px-2 py-0.5 rounded text-[9px] bg-amber-600 text-white font-mono font-black shadow-sm">MASTER SAAS</span>
-        </button>
-        <div class="grid grid-cols-4 gap-1.5">
-          <button type="button" onclick="quickFillLogin('admin', 'Admin@123')" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 text-center transition">
-            <span class="block text-sm">🛡️</span>
-            <span class="block text-[10px] font-bold truncate">Admin</span>
-            <span class="block text-[8px] text-emerald-600 font-mono font-bold">ADMIN</span>
-          </button>
-          <button type="button" onclick="quickFillLogin('reception', 'Reception@123')" class="p-2 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 text-center transition">
-            <span class="block text-sm">🏢</span>
-            <span class="block text-[10px] font-bold truncate">Reception</span>
-            <span class="block text-[8px] text-sky-600 font-mono font-bold">RECEPTION</span>
-          </button>
-          <button type="button" onclick="quickFillLogin('dr.rayees', 'Doctor@123')" class="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 text-center transition">
-            <span class="block text-sm">👨‍⚕️</span>
-            <span class="block text-[10px] font-bold truncate">Dr. Rayees</span>
-            <span class="block text-[8px] text-indigo-600 font-mono font-bold">DOCTOR</span>
-          </button>
-          <button type="button" onclick="quickFillLogin('tech.kulgam', 'Tech@123')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-center transition">
-            <span class="block text-sm">📋</span>
-            <span class="block text-[10px] font-bold truncate">Technician</span>
-            <span class="block text-[8px] text-slate-500 font-mono font-bold">TECH</span>
-          </button>
-        </div>
-      </div>
-
       <div class="flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
         <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-600"></i>
         <span>Protected by Cloudflare D1 Zero-Trust Edge Security</span>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- CHANGE PASSWORD MODAL (FIRST LOGIN & ON-DEMAND) -->
+  <!-- ========================================== -->
+  <div id="changePasswordModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-5 relative border border-slate-100">
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-md">
+          <i data-lucide="key-round" class="w-6 h-6"></i>
+        </div>
+        <h2 id="change-pwd-title" class="text-lg font-black text-slate-900 tracking-tight">Set New Password</h2>
+        <p id="change-pwd-subtitle" class="text-xs text-slate-500">For security compliance, please update your account password.</p>
+      </div>
+
+      <div id="first-login-notice" class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs hidden flex items-start gap-2.5">
+        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+        <span><strong>First Login Requirement:</strong> You are currently using default/temporary credentials. Please set a new personal password before accessing the workstation.</span>
+      </div>
+
+      <form id="changePasswordForm" onsubmit="handleChangePasswordSubmit(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Current Password *</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="chg-curr-password" required placeholder="Enter current password" autocomplete="current-password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">New Password (min 6 characters) *</label>
+          <div class="relative">
+            <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="chg-new-password" required minlength="6" placeholder="Enter new strong password" autocomplete="new-password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Confirm New Password *</label>
+          <div class="relative">
+            <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="chg-confirm-password" required minlength="6" placeholder="Re-enter new password" autocomplete="new-password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" id="chg-pwd-cancel-btn" onclick="closeChangePasswordModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">Cancel</button>
+          <button type="submit" id="chg-pwd-submit-btn" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center gap-2 shadow-md transition">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Update Password</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -4402,6 +4427,9 @@
           currentAuthUser = data.user;
           localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentAuthUser));
           updateAuthUI();
+          if (currentAuthUser.mustChangePassword) {
+            openChangePasswordModal(true);
+          }
         } else {
           // Token expired or invalid
           handleUserLogout(false);
@@ -4775,7 +4803,9 @@
 
           updateAuthUI();
           showToast(`Welcome back, ${currentAuthUser.fullName}! (${currentAuthUser.role})`);
-          if (currentAuthUser.role === 'SUPER_ADMIN') {
+          if (currentAuthUser.mustChangePassword) {
+            openChangePasswordModal(true);
+          } else if (currentAuthUser.role === 'SUPER_ADMIN') {
             switchTab('master-tenants');
             loadMasterTenants();
           } else {
@@ -4835,10 +4865,105 @@
       if (notify) showToast("Logged out of Nexa-LMIS workstation.");
     }
 
-    function quickFillLogin(user, pwd) {
-      document.getElementById('login-username').value = user;
-      document.getElementById('login-password').value = pwd;
-      handleUserLogin();
+    // ==========================================
+    // CHANGE PASSWORD MODAL & API HANDLERS
+    // ==========================================
+    function openChangePasswordModal(isForced = false) {
+      const modal = document.getElementById('changePasswordModal');
+      const notice = document.getElementById('first-login-notice');
+      const cancelBtn = document.getElementById('chg-pwd-cancel-btn');
+      const title = document.getElementById('change-pwd-title');
+      const subtitle = document.getElementById('change-pwd-subtitle');
+
+      if (isForced) {
+        if (notice) notice.classList.remove('hidden');
+        if (cancelBtn) cancelBtn.classList.add('hidden');
+        if (title) title.innerText = "First Login: Set Your New Password";
+        if (subtitle) subtitle.innerText = "For security compliance, you must set a new personal password before accessing the workstation.";
+      } else {
+        if (notice) notice.classList.add('hidden');
+        if (cancelBtn) cancelBtn.classList.remove('hidden');
+        if (title) title.innerText = "Change Account Password";
+        if (subtitle) subtitle.innerText = "Enter your current password and choose a new secure password.";
+      }
+
+      const form = document.getElementById('changePasswordForm');
+      if (form) form.reset();
+      if (modal) modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeChangePasswordModal() {
+      if (currentAuthUser && currentAuthUser.mustChangePassword) {
+        showToast("Password change is mandatory on first login.", "error");
+        return;
+      }
+      const modal = document.getElementById('changePasswordModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function handleChangePasswordSubmit(e) {
+      if (e) e.preventDefault();
+      const currentPassword = document.getElementById('chg-curr-password').value;
+      const newPassword = document.getElementById('chg-new-password').value;
+      const confirmPassword = document.getElementById('chg-confirm-password').value;
+      const submitBtn = document.getElementById('chg-pwd-submit-btn');
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        return showToast("Please fill in all password fields.", "error");
+      }
+
+      if (newPassword.length < 6) {
+        return showToast("New password must be at least 6 characters long.", "error");
+      }
+
+      if (newPassword !== confirmPassword) {
+        return showToast("New password and confirmation password do not match.", "error");
+      }
+
+      if (currentPassword === newPassword) {
+        return showToast("New password must be different from current password.", "error");
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="animate-spin inline-block mr-2">⌛</span> Updating...`;
+      }
+
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(data.message || "Password updated successfully!", "success");
+          if (currentAuthUser) {
+            currentAuthUser.mustChangePassword = false;
+            localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentAuthUser));
+          }
+          const modal = document.getElementById('changePasswordModal');
+          if (modal) modal.classList.add('hidden');
+
+          if (currentAuthUser?.role === 'SUPER_ADMIN') {
+            switchTab('master-tenants');
+            loadMasterTenants();
+          } else {
+            syncWithCloudflareD1();
+          }
+        } else {
+          showToast(data.error || "Failed to update password.", "error");
+        }
+      } catch (err) {
+        showToast("Network error while updating password.", "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4"></i><span>Update Password</span>`;
+          lucide.createIcons();
+        }
+      }
     }
 
     function togglePasswordVisibility() {
