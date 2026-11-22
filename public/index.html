@@ -108,84 +108,104 @@
       </div>
 
       <div class="p-3 space-y-1">
-        <!-- MASTER SAAS HUB (SUPER ADMIN ONLY) -->
-        <button onclick="switchTab('master-tenants')" id="nav-master-tenants" style="display: none;" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 hover:from-amber-500/30 hover:to-orange-500/30 transition-all mb-2 shadow-sm">
-          <div class="flex items-center gap-2.5">
-            <i data-lucide="shield-check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+        <!-- MASTER SAAS NAVIGATION (SUPER ADMIN ONLY) -->
+        <div id="sidebar-master-nav" style="display: none;" class="space-y-1">
+          <p class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400/90 flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
             <span>SaaS Master Control</span>
-          </div>
-          <span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500 text-slate-950 font-mono font-black">SUPER</span>
-        </button>
+          </p>
 
-        <p class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Clinical Workflow</p>
-        
-        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
-          <span>Executive Dashboard</span>
-        </button>
+          <button onclick="switchTab('master-tenants')" id="nav-master-tenants" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all mb-1 shadow-sm">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="building-2" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span>Tenant Organizations</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500 text-slate-950 font-mono font-black">MASTER</span>
+          </button>
 
-        <button onclick="switchTab('intake')" id="nav-intake" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="user-plus" class="w-4 h-4 shrink-0"></i>
-          <span>Patient Intake & UPI</span>
-        </button>
+          <button onclick="openMasterAddTenantModal()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+            <span>+ Add Organization</span>
+          </button>
 
-        <button onclick="switchTab('registry')" id="nav-registry" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <div class="flex items-center gap-3">
-            <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0"></i>
-            <span>Patient Registry</span>
-          </div>
-          <span id="sidebar-patient-count" class="px-2 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-300 font-mono">0</span>
-        </button>
+          <button onclick="loadMasterTenants()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-sky-400 shrink-0"></i>
+            <span>Refresh Registry</span>
+          </button>
+        </div>
 
-        <button onclick="switchTab('referrals')" id="nav-referrals" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <div class="flex items-center gap-3">
-            <i data-lucide="handshake" class="w-4 h-4 shrink-0"></i>
-            <span>Referral Commissions</span>
-          </div>
-          <span id="sidebar-ref-due" class="px-2 py-0.5 text-[10px] rounded-full bg-blue-950 text-blue-300 border border-blue-700/40 font-mono">₹0</span>
-        </button>
+        <!-- CLINICAL WORKSTATION NAVIGATION (CLINIC OPERATORS ONLY) -->
+        <div id="sidebar-clinic-nav" class="space-y-1">
+          <p class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Clinical Workflow</p>
+          
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
+            <span>Executive Dashboard</span>
+          </button>
 
-        <p class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Diagnostics & Reporting</p>
+          <button onclick="switchTab('intake')" id="nav-intake" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="user-plus" class="w-4 h-4 shrink-0"></i>
+            <span>Patient Intake & UPI</span>
+          </button>
 
-        <button onclick="switchTab('writer')" id="nav-writer" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="file-pen-line" class="w-4 h-4 shrink-0"></i>
-          <span>NCS Report Writer</span>
-        </button>
+          <button onclick="switchTab('registry')" id="nav-registry" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <div class="flex items-center gap-3">
+              <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0"></i>
+              <span>Patient Registry</span>
+            </div>
+            <span id="sidebar-patient-count" class="px-2 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-300 font-mono">0</span>
+          </button>
 
-        <button onclick="switchTab('tariff')" id="nav-tariff" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="stethoscope" class="w-4 h-4 shrink-0"></i>
-          <span>Reporting Charges Settings</span>
-        </button>
+          <button onclick="switchTab('referrals')" id="nav-referrals" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <div class="flex items-center gap-3">
+              <i data-lucide="handshake" class="w-4 h-4 shrink-0"></i>
+              <span>Referral Commissions</span>
+            </div>
+            <span id="sidebar-ref-due" class="px-2 py-0.5 text-[10px] rounded-full bg-blue-950 text-blue-300 border border-blue-700/40 font-mono">₹0</span>
+          </button>
 
-        <button onclick="switchTab('report')" id="nav-report" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="printer" class="w-4 h-4 shrink-0"></i>
-          <span>Clinical Report Preview</span>
-        </button>
+          <p class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Diagnostics & Reporting</p>
 
-        <p class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Administration & Vault</p>
+          <button onclick="switchTab('writer')" id="nav-writer" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="file-pen-line" class="w-4 h-4 shrink-0"></i>
+            <span>NCS Report Writer</span>
+          </button>
 
-        <button onclick="switchTab('ledger')" id="nav-ledger" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="landmark" class="w-4 h-4 shrink-0"></i>
-          <span>Dr. Ledger & OPEX</span>
-        </button>
+          <button onclick="switchTab('tariff')" id="nav-tariff" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="stethoscope" class="w-4 h-4 shrink-0"></i>
+            <span>Reporting Charges Settings</span>
+          </button>
 
-        <button onclick="switchTab('doctor')" id="nav-doctor" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="user-cog" class="w-4 h-4 shrink-0"></i>
-          <span>Reporting Doctor Management</span>
-        </button>
+          <button onclick="switchTab('report')" id="nav-report" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="printer" class="w-4 h-4 shrink-0"></i>
+            <span>Clinical Report Preview</span>
+          </button>
 
-        <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <i data-lucide="sliders" class="w-4 h-4 shrink-0"></i>
-          <span>Lab Config & D1 Cloud Vault</span>
-        </button>
+          <p class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Administration & Vault</p>
 
-        <button onclick="switchTab('users')" id="nav-users" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
-          <div class="flex items-center gap-3">
-            <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-amber-400"></i>
-            <span>Staff & RBAC Console</span>
-          </div>
-          <span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-300 font-mono font-bold">ADMIN</span>
-        </button>
+          <button onclick="switchTab('ledger')" id="nav-ledger" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="landmark" class="w-4 h-4 shrink-0"></i>
+            <span>Dr. Ledger & OPEX</span>
+          </button>
+
+          <button onclick="switchTab('doctor')" id="nav-doctor" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="user-cog" class="w-4 h-4 shrink-0"></i>
+            <span>Reporting Doctor Management</span>
+          </button>
+
+          <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <i data-lucide="sliders" class="w-4 h-4 shrink-0"></i>
+            <span>Lab Config & D1 Cloud Vault</span>
+          </button>
+
+          <button onclick="switchTab('users')" id="nav-users" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all">
+            <div class="flex items-center gap-3">
+              <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-amber-400"></i>
+              <span>Staff & RBAC Console</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-300 font-mono font-bold">ADMIN</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -226,24 +246,39 @@
       </div>
 
       <div class="flex items-center gap-2.5">
-        <button onclick="switchTab('intake')" class="px-3 py-2 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs flex items-center gap-1.5 border border-brand-200 transition">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          <span class="hidden md:inline">New Patient</span>
-        </button>
+        <!-- Master SaaS Topbar Actions (SUPER ADMIN ONLY) -->
+        <div id="topbar-master-actions" style="display: none;" class="flex items-center gap-2">
+          <button onclick="openMasterAddTenantModal()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Add Organization</span>
+          </button>
+          <button onclick="loadMasterTenants()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 border border-slate-200 transition">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>Refresh Tenants</span>
+          </button>
+        </div>
 
-        <button onclick="syncWithCloudflareD1()" id="btn-cloud-sync" title="Sync with Cloudflare D1 Database" class="px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center gap-1.5 border border-indigo-200 transition">
-          <i data-lucide="cloud" class="w-4 h-4"></i>
-          <span class="hidden lg:inline">Cloud Sync</span>
-        </button>
+        <!-- Clinical Workstation Topbar Actions -->
+        <div id="topbar-clinical-actions" class="flex items-center gap-2.5">
+          <button onclick="switchTab('intake')" class="px-3 py-2 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs flex items-center gap-1.5 border border-brand-200 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span class="hidden md:inline">New Patient</span>
+          </button>
 
-        <button onclick="exportFullExcelWorkbook()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition">
-          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-          <span>Export Full Excel (.xlsx)</span>
-        </button>
+          <button onclick="syncWithCloudflareD1()" id="btn-cloud-sync" title="Sync with Cloudflare D1 Database" class="px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center gap-1.5 border border-indigo-200 transition">
+            <i data-lucide="cloud" class="w-4 h-4"></i>
+            <span class="hidden lg:inline">Cloud Sync</span>
+          </button>
 
-        <button onclick="triggerQuickJsonBackup()" title="Save Backup Snapshot for E:\ Vault" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
-          <i data-lucide="hard-drive-download" class="w-4 h-4"></i>
-        </button>
+          <button onclick="exportFullExcelWorkbook()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>Export Full Excel (.xlsx)</span>
+          </button>
+
+          <button onclick="triggerQuickJsonBackup()" title="Save Backup Snapshot for E:\ Vault" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
+            <i data-lucide="hard-drive-download" class="w-4 h-4"></i>
+          </button>
+        </div>
 
         <!-- User Authentication Profile Widget -->
         <div id="topbar-user-badge" class="flex items-center gap-2.5 pl-3 border-l border-slate-200">
@@ -2104,6 +2139,10 @@
      * Seamless Cloudflare D1 Synchronization
      */
     async function syncWithCloudflareD1() {
+      if (currentAuthUser?.role === 'SUPER_ADMIN') {
+        setCloudStatus('connected', 'D1 Master Platform');
+        return;
+      }
       setCloudStatus('syncing', 'Connecting D1...');
       try {
         const tenantQuery = (currentAuthUser?.role === 'SUPER_ADMIN' && appState.inspectedTenantId)
@@ -2233,35 +2272,35 @@
       const isReception = (normalized === 'RECEPTION' || normalized === 'RECEPTIONIST');
       const canViewRegistry = (isAdmin || isReception);
 
-      const navMasterTenants = document.getElementById('nav-master-tenants');
-      if (navMasterTenants) navMasterTenants.style.display = isSuper ? '' : 'none';
+      const sidebarMasterNav = document.getElementById('sidebar-master-nav');
+      const sidebarClinicNav = document.getElementById('sidebar-clinic-nav');
+      const topbarMaster = document.getElementById('topbar-master-actions');
+      const topbarClinical = document.getElementById('topbar-clinical-actions');
 
-      // Hide or show sidebar category headers and clinical buttons for Super Admin
-      const sidebarCatHeaders = document.querySelectorAll('#app-sidebar p.tracking-wider');
-      sidebarCatHeaders.forEach(el => {
-        el.style.display = isSuper ? 'none' : '';
-      });
+      if (sidebarMasterNav) sidebarMasterNav.style.display = isSuper ? 'block' : 'none';
+      if (sidebarClinicNav) sidebarClinicNav.style.display = isSuper ? 'none' : 'block';
+      if (topbarMaster) topbarMaster.style.display = isSuper ? 'flex' : 'none';
+      if (topbarClinical) topbarClinical.style.display = isSuper ? 'none' : 'flex';
 
-      // Topbar buttons visibility: hide clinical action buttons for Super Admin
-      const topIntakeBtn = document.querySelector("button[onclick*='switchTab(\'intake\')']");
-      const topCloudBtn = document.getElementById('btn-cloud-sync');
-      const topExcelBtn = document.querySelector("button[onclick*='exportFullExcelWorkbook']");
-      const topBackupBtn = document.querySelector("button[onclick*='triggerQuickJsonBackup']");
-
-      if (topIntakeBtn) topIntakeBtn.style.display = isSuper ? 'none' : '';
-      if (topCloudBtn) topCloudBtn.style.display = isSuper ? 'none' : '';
-      if (topExcelBtn) topExcelBtn.style.display = isSuper ? 'none' : '';
-      if (topBackupBtn) topBackupBtn.style.display = isSuper ? 'none' : '';
-
+      const sideLabName = document.getElementById('sidebar-lab-name');
       const topTitle = document.getElementById('topbar-facility-title');
       const topSub = document.getElementById('topbar-facility-sub');
+      const topD1Status = document.getElementById('topbar-d1-status');
+
       if (isSuper) {
+        if (sideLabName) sideLabName.innerText = "SpringNexa Platform Control";
         if (topTitle) topTitle.innerText = "SPRINGNEXA SAAS PLATFORM ADMINISTRATION";
-        if (topSub) topSub.innerText = "Master Control Hub • Personal & Clinical Data Restricted";
-      } else {
-        if (topTitle) topTitle.innerText = appState.settings?.facilityName || "AL JAWAHIRA ELECTROPHYSIOLOGY";
-        if (topSub) topSub.innerText = appState.settings?.parentEntity || "Center For NeuroDiagnostics • Operated by SpringNexa";
+        if (topSub) topSub.innerText = "Master Control Hub • Organization & Admin Management";
+        if (topD1Status) {
+          topD1Status.className = "hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300";
+          topD1Status.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Master Control';
+        }
+        return; // Zero clinical setup for SUPER_ADMIN
       }
+
+      if (sideLabName) sideLabName.innerText = appState.settings?.facilityName || "Al-Jawahira Neuro Lab";
+      if (topTitle) topTitle.innerText = appState.settings?.facilityName || "AL JAWAHIRA ELECTROPHYSIOLOGY";
+      if (topSub) topSub.innerText = appState.settings?.parentEntity ? `Center For NeuroDiagnostics • Operated by ${appState.settings.parentEntity}` : "Center For NeuroDiagnostics • Operated by SpringNexa";
 
       // 1. Enforce OPEX visibility (ONLY visible in ADMIN login)
       const opexKpi = document.getElementById('kpi-opex-container');
@@ -2459,6 +2498,16 @@
     }
 
     function refreshAllViews() {
+      if (currentAuthUser?.role === 'SUPER_ADMIN') {
+        const topTitle = document.getElementById('topbar-facility-title');
+        const topSub = document.getElementById('topbar-facility-sub');
+        const sideName = document.getElementById('sidebar-lab-name');
+        if (topTitle) topTitle.innerText = "SPRINGNEXA SAAS PLATFORM ADMINISTRATION";
+        if (topSub) topSub.innerText = "Master Control Hub • Organization & Admin Management";
+        if (sideName) sideName.innerText = "SpringNexa Platform Control";
+        lucide.createIcons();
+        return;
+      }
       const st = appState.settings;
       document.getElementById('sidebar-lab-name').innerText = st.facilityName;
       document.getElementById('topbar-facility-title').innerText = st.facilityName;
@@ -4319,8 +4368,12 @@
       if (sideRole) sideRole.innerText = role;
 
       applyRolePermissions(role);
-      // Auto-switch away from restricted tab for doctors
-      if (role === 'DOCTOR') {
+      // Auto-switch away from restricted tab
+      if (role === 'SUPER_ADMIN') {
+        if (appState.activeTab !== 'master-tenants') {
+          switchTab('master-tenants');
+        }
+      } else if (role === 'DOCTOR') {
         const allowed = ROLE_PERMISSIONS.DOCTOR;
         if (!allowed.includes(appState.activeTab)) {
           switchTab('writer');
@@ -4722,8 +4775,13 @@
 
           updateAuthUI();
           showToast(`Welcome back, ${currentAuthUser.fullName}! (${currentAuthUser.role})`);
-          // Sync with D1 after successful login
-          syncWithCloudflareD1();
+          if (currentAuthUser.role === 'SUPER_ADMIN') {
+            switchTab('master-tenants');
+            loadMasterTenants();
+          } else {
+            // Sync with D1 after successful login
+            syncWithCloudflareD1();
+          }
         } else {
           showToast(data.error || "Authentication failed. Check credentials.", "error");
         }
@@ -4798,11 +4856,16 @@
     }
 
     // Initialize application on load
-    window.onload = function() {
-      checkAuthSession();
-      switchTab(appState.activeTab || 'dashboard');
-      // Background sync with Cloudflare D1
-      syncWithCloudflareD1();
+    window.onload = async function() {
+      await checkAuthSession();
+      if (currentAuthUser && currentAuthUser.role === 'SUPER_ADMIN') {
+        switchTab('master-tenants');
+        loadMasterTenants();
+      } else {
+        switchTab(appState.activeTab || 'dashboard');
+        // Background sync with Cloudflare D1
+        syncWithCloudflareD1();
+      }
     };
   </script>
 </body>
