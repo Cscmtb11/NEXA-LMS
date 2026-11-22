@@ -258,7 +258,7 @@ async function authenticateUser(request, db) {
 /**
  * Load complete application state from Cloudflare D1
  */
-async function getFullState(db) {
+async function getFullState(db, userRole = null) {
   const [
     settingsRow,
     doctorsResult,
@@ -367,12 +367,12 @@ async function getFullState(db) {
       mode: r.mode
     })),
     ledgerEntries: ledgerList,
-    expenses: (expensesResult.results || []).map(e => ({
+    expenses: (userRole === 'ADMIN') ? (expensesResult.results || []).map(e => ({
       id: e.id,
       category: e.category,
       name: e.name,
       amount: e.amount
-    }))
+    })) : []
   };
 }
 
@@ -548,10 +548,11 @@ export default {
       // CLINICAL DATA ROUTES
       // ==========================================
 
-      // GET /api/state - Full State for Client Init & Sync
+      // GET /api/state - Full State for Client Init & Sync (Role-Filtered)
       if (url.pathname === '/api/state' && request.method === 'GET') {
-        const state = await getFullState(env.DB);
-        return jsonResponse({ ok: true, state });
+        const currentUser = await authenticateUser(request, env.DB);
+        const state = await getFullState(env.DB, currentUser?.role);
+        return jsonResponse({ ok: true, state, role: currentUser?.role || 'GUEST' });
       }
 
       // POST /api/sync - Bulk Push / Restore State to Cloudflare D1

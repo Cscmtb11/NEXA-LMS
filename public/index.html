@@ -309,7 +309,7 @@
             <p class="text-[11px] text-slate-500 mt-1">Referring doctor incentives</p>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div id="kpi-opex-container" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Monthly OPEX</span>
               <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i data-lucide="receipt" class="w-4 h-4"></i></div>
@@ -318,7 +318,7 @@
             <p class="text-[11px] text-slate-500 mt-1">EMIs, bills, lab overheads</p>
           </div>
 
-          <div class="bg-emerald-950 p-5 rounded-2xl border border-emerald-800 text-white shadow-sm">
+          <div id="kpi-surplus-container" class="bg-emerald-950 p-5 rounded-2xl border border-emerald-800 text-white shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-300">Net Lab Surplus</span>
               <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center"><i data-lucide="wallet" class="w-4 h-4"></i></div>
@@ -1035,7 +1035,7 @@
       <!-- ========================================== -->
       <section id="view-ledger" class="view-section hidden space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+          <div id="ledger-main-col" class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 class="text-sm font-bold text-slate-900">Reporting Consultants Unified Settlement Ledger (Weekly Sessions)</h3>
@@ -1078,7 +1078,7 @@
               </table>
             </div>
 
-            <div class="pt-4 border-t border-slate-100">
+            <div id="manual-ledger-entry-section" class="pt-4 border-t border-slate-100">
               <h4 class="text-xs font-bold text-slate-800 mb-2">Add Manual Ledger Payout / Entry</h4>
               <form onsubmit="handleAddLedgerEntry(event)" class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
                 <div>
@@ -1101,7 +1101,7 @@
             </div>
           </div>
 
-          <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+          <div id="opex-card-container" class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 class="text-sm font-bold text-slate-900">Monthly Operating Expenses (OPEX)</h3>
@@ -1898,6 +1898,28 @@
     };
 
     function applyRolePermissions(role) {
+      const isAdmin = (role === 'ADMIN');
+
+      // 1. Enforce OPEX visibility (ONLY visible in ADMIN login)
+      const opexKpi = document.getElementById('kpi-opex-container');
+      const surplusKpi = document.getElementById('kpi-surplus-container');
+      const opexLedgerCard = document.getElementById('opex-card-container');
+      const ledgerMainCol = document.getElementById('ledger-main-col');
+      const manualLedgerSection = document.getElementById('manual-ledger-entry-section');
+
+      if (opexKpi) opexKpi.style.display = isAdmin ? '' : 'none';
+      if (surplusKpi) surplusKpi.style.display = isAdmin ? '' : 'none';
+      if (opexLedgerCard) opexLedgerCard.style.display = isAdmin ? '' : 'none';
+      if (manualLedgerSection) manualLedgerSection.style.display = isAdmin ? '' : 'none';
+
+      if (ledgerMainCol) {
+        if (isAdmin) {
+          ledgerMainCol.className = 'lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4';
+        } else {
+          ledgerMainCol.className = 'lg:col-span-12 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4';
+        }
+      }
+
       const allowed = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.TECHNICIAN;
 
       // Adjust Sidebar navigation buttons based on role
@@ -3595,7 +3617,9 @@
       appState.expenses.forEach(e => {
         opexRows.push([e.category, e.name, e.amount]);
       });
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(opexRows), "Monthly Expenses Lab");
+      if (currentAuthUser && currentAuthUser.role === 'ADMIN') {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(opexRows), "Monthly Expenses Lab");
+      }
 
       const dateStr = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `Al_Jawahira_NexaLMIS_Enterprise_${dateStr}.xlsx`);
