@@ -529,6 +529,21 @@ export default {
         return jsonResponse({ ok: true, id, message: `User ${username} created successfully.` }, 201);
       }
 
+      // DELETE /api/users/:id - Delete Staff User (Admin Only)
+      if (url.pathname.startsWith('/api/users/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+          return jsonResponse({ error: 'Administrator privilege required to delete staff.' }, 403);
+        }
+        const id = url.pathname.split('/')[3];
+        if (id === currentUser.id || id === 'USR_ADMIN') {
+          return jsonResponse({ error: 'Cannot delete the master administrator account.' }, 400);
+        }
+        await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
+        return jsonResponse({ ok: true, deleted: id, message: 'User removed from Cloudflare D1.' });
+      }
+
+
       // ==========================================
       // CLINICAL DATA ROUTES
       // ==========================================
