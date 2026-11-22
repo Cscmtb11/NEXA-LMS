@@ -221,6 +221,23 @@ async function ensureD1Schema(db) {
     VALUES ('default', 'Al-Jawahira Neuro Workstation', 'al-jawahira', 'ENTERPRISE', 'ACTIVE', ?)
   `).bind(now).run();
 
+  // Ensure SpringNexa Master Platform Administrator
+  await db.prepare(`
+    INSERT OR IGNORE INTO users (id, tenant_id, username, email, full_name, role, password_hash, password_salt, status, created_at)
+    VALUES (
+      'USR_MASTER_SPRINGNEXA',
+      'master',
+      'admin@springnexa.in',
+      'admin@springnexa.in',
+      'SpringNexa Master Administrator',
+      'SUPER_ADMIN',
+      'e9057183404b5c21282997f8549f125f6c4a344f883b9efc46a5026f75df7b52',
+      'salt_springnexa_master',
+      'ACTIVE',
+      '2026-11-22 10:30:00'
+    )
+  `).run();
+
   schemaInitialized = true;
 }
 
@@ -271,7 +288,7 @@ function resolveTenantId(request, currentUser = null) {
     return queryTenant.trim().toLowerCase();
   }
 
-  if (currentUser?.tenantId) {
+  if (currentUser?.tenantId && currentUser.role !== 'SUPER_ADMIN') {
     return currentUser.tenantId;
   }
 
@@ -429,7 +446,7 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
       mode: r.mode
     })),
     ledgerEntries: ledgerList,
-    expenses: (userRole === 'ADMIN') ? (expensesResult.results || []).map(e => ({
+    expenses: (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') ? (expensesResult.results || []).map(e => ({
       id: e.id,
       category: e.category,
       name: e.name,
@@ -472,19 +489,40 @@ export default {
       }
 
       // ==========================================
-      // MULTI-TENANT MANAGEMENT ROUTES
+      // SPRINGNEXA MASTER SAAS TENANT CONTROL
       // ==========================================
 
-      // GET /api/tenants - List All Organizations
-      if (url.pathname === '/api/tenants' && request.method === 'GET') {
+      // GET /api/master/tenants - Full platform telemetry (Master Admin Only)
+      if (url.pathname === '/api/master/tenants' && request.method === 'GET') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
         const { results = [] } = await env.DB.prepare(`
-          SELECT id, name, slug, plan, status, created_at FROM tenants ORDER BY created_at ASC
+          SELECT 
+            t.id, t.name, t.slug, t.plan, t.status, t.created_at,
+            fs.parent_entity, fs.address, fs.phones, fs.vpa,
+            (SELECT COUNT(*) FROM patients p WHERE p.tenant_id = t.id) as patient_count,
+            (SELECT COUNT(*) FROM reporting_doctors d WHERE d.tenant_id = t.id) as doctor_count,
+            (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id) as user_count,
+            (SELECT username FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_username,
+            (SELECT email FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_email
+          FROM tenants t
+          LEFT JOIN facility_settings fs ON fs.tenant_id = t.id
+          ORDER BY t.created_at DESC
         `).all();
+
         return jsonResponse({ ok: true, tenants: results });
       }
 
-      // POST /api/tenants - Provision New Diagnostic Clinic (Tenant)
-      if (url.pathname === '/api/tenants' && request.method === 'POST') {
+      // POST /api/master/tenants - Provision new clinic tenant (Master Admin Only)
+      if (url.pathname === '/api/master/tenants' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
         let body;
         try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
 
@@ -496,7 +534,7 @@ export default {
           return jsonResponse({ error: 'Clinic Organization Name and unique Slug are required.' }, 400);
         }
 
-        const existing = await env.DB.prepare("SELECT id FROM tenants WHERE slug = ?").bind(slug).first();
+        const existing = await env.DB.prepare("SELECT id FROM tenants WHERE slug = ? OR id = ?").bind(slug, 'org_' + slug).first();
         if (existing) {
           return jsonResponse({ error: `An organization with slug '${slug}' already exists.` }, 409);
         }
@@ -532,7 +570,7 @@ export default {
             body.dpiit || '',
             body.address || 'Diagnostic Clinic Facility',
             body.phones || '',
-            body.vpa || '',
+            body.vpa || 'springnexaa@okaxis',
             now
           ),
 
@@ -552,10 +590,119 @@ export default {
 
         return jsonResponse({
           ok: true,
-          tenant: { id: tenantId, name, slug, plan },
+          tenant: { id: tenantId, name, slug, plan, status: 'ACTIVE' },
           adminUser: { id: adminId, username: adminUsername, email: adminEmail, fullName: adminName, role: 'ADMIN' },
           message: `Diagnostic Organization '${name}' provisioned successfully!`
         }, 201);
+      }
+
+      // PUT /api/master/tenants/:id - Update tenant subscription/details (Master Admin Only)
+      if (url.pathname.startsWith('/api/master/tenants/') && !url.pathname.includes('/reset-admin') && request.method === 'PUT') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[4];
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const name = String(body.name || '').trim();
+        const plan = String(body.plan || 'PRO').toUpperCase();
+        const status = String(body.status || 'ACTIVE').toUpperCase();
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          UPDATE tenants SET name = ?, plan = ?, status = ? WHERE id = ?
+        `).bind(name, plan, status, id).run();
+
+        if (body.address !== undefined || body.phones !== undefined || body.parentEntity !== undefined) {
+          await env.DB.prepare(`
+            UPDATE facility_settings
+            SET facility_name = ?, parent_entity = ?, address = ?, phones = ?, vpa = ?, updated_at = ?
+            WHERE tenant_id = ?
+          `).bind(
+            name,
+            body.parentEntity || '',
+            body.address || '',
+            body.phones || '',
+            body.vpa || '',
+            now,
+            id
+          ).run();
+        }
+
+        return jsonResponse({ ok: true, message: 'Tenant updated successfully.' });
+      }
+
+      // POST /api/master/tenants/:id/reset-admin - Reset tenant clinic admin password (Master Admin Only)
+      if (url.pathname.startsWith('/api/master/tenants/') && url.pathname.endsWith('/reset-admin') && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[4];
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const newPassword = String(body.newPassword || '').trim();
+        if (!newPassword || newPassword.length < 6) {
+          return jsonResponse({ error: 'New password must be at least 6 characters.' }, 400);
+        }
+
+        const salt = 'salt_' + crypto.randomUUID().slice(0, 8);
+        const hash = await hashPassword(newPassword, salt);
+
+        await env.DB.prepare(`
+          UPDATE users
+          SET password_hash = ?, password_salt = ?
+          WHERE tenant_id = ? AND role = 'ADMIN'
+        `).bind(hash, salt, id).run();
+
+        return jsonResponse({ ok: true, message: 'Tenant administrator password reset successfully.' });
+      }
+
+      // DELETE /api/master/tenants/:id - Suspend or Purge Tenant (Master Admin Only)
+      if (url.pathname.startsWith('/api/master/tenants/') && request.method === 'DELETE') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[4];
+        if (id === 'default' || id === 'master') {
+          return jsonResponse({ error: 'Root default tenant cannot be deleted.' }, 400);
+        }
+
+        const purge = url.searchParams.get('purge') === 'true';
+
+        if (purge) {
+          await env.DB.batch([
+            env.DB.prepare("DELETE FROM patients WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM reporting_doctors WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM tariffs WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM referral_partners WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM referral_payouts WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM ledger_entries WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM expenses WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM facility_settings WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM users WHERE tenant_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM tenants WHERE id = ?").bind(id)
+          ]);
+          return jsonResponse({ ok: true, message: 'Tenant and all clinical records purged completely.' });
+        } else {
+          await env.DB.prepare("UPDATE tenants SET status = 'SUSPENDED' WHERE id = ?").bind(id).run();
+          return jsonResponse({ ok: true, message: 'Tenant suspended successfully.' });
+        }
+      }
+
+      // Backward-compatible alias for existing endpoints
+      if (url.pathname === '/api/tenants' && request.method === 'GET') {
+        const { results = [] } = await env.DB.prepare(`
+          SELECT id, name, slug, plan, status, created_at FROM tenants ORDER BY created_at ASC
+        `).all();
+        return jsonResponse({ ok: true, tenants: results });
       }
 
       // ==========================================
