@@ -171,6 +171,22 @@
         </button>
       </div>
     </div>
+
+    <!-- Sidebar User Profile Footer -->
+    <div id="sidebar-user-footer" class="p-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+      <div class="flex items-center gap-2.5 overflow-hidden">
+        <div id="sidebar-avatar" class="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          DR
+        </div>
+        <div class="truncate">
+          <p id="sidebar-username" class="text-xs font-bold text-white truncate">Dr. Rayees Ahmad</p>
+          <p id="sidebar-userrole" class="text-[10px] text-slate-400 font-mono uppercase">DOCTOR</p>
+        </div>
+      </div>
+      <button onclick="handleUserLogout()" title="Log Out" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+      </button>
+    </div>
   </aside>
 
   <!-- ========================================== -->
@@ -211,6 +227,20 @@
         <button onclick="triggerQuickJsonBackup()" title="Save Backup Snapshot for E:\ Vault" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
           <i data-lucide="hard-drive-download" class="w-4 h-4"></i>
         </button>
+
+        <!-- User Authentication Profile Widget -->
+        <div id="topbar-user-badge" class="flex items-center gap-2.5 pl-3 border-l border-slate-200">
+          <div id="topbar-avatar" class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-600 to-indigo-700 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+            DR
+          </div>
+          <div class="hidden xl:block text-left">
+            <p id="topbar-username" class="text-xs font-bold text-slate-900 leading-tight">Dr. Rayees Ahmad</p>
+            <span id="topbar-userrole" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold uppercase">DOCTOR</span>
+          </div>
+          <button onclick="handleUserLogout()" title="Log out from clinical station" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition ml-1">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -1203,6 +1233,76 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SECURE USER LOGIN MODAL                    -->
+  <!-- ========================================== -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6 relative border border-slate-100">
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-800 text-white flex items-center justify-center mx-auto shadow-xl shadow-brand-600/30">
+          <i data-lucide="shield-check" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-xl font-black text-slate-900 tracking-tight">Clinical Operator Login</h2>
+        <p class="text-xs text-slate-500">Al-Jawahira NeuroDiagnostics • Cloudflare D1 Vault</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleUserLogin(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Username or Work Email</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="text" id="login-username" required placeholder="admin or dr.rayees or tech.kulgam" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" />
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 focus:outline-none">
+              <i data-lucide="eye" id="login-pwd-toggle" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" id="login-submit-btn" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>Sign In to Clinical Station</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- One-Click Quick Login Presets for Clinical Operators -->
+      <div class="pt-4 border-t border-slate-100 space-y-2.5">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">1-Click Quick Operator Switch</p>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="quickFillLogin('dr.rayees', 'Doctor@123')" class="p-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 text-center transition">
+            <span class="block text-sm">👨‍⚕️</span>
+            <span class="block text-[10px] font-bold truncate">Dr. Rayees</span>
+            <span class="block text-[9px] text-indigo-600 font-mono">DOCTOR</span>
+          </button>
+          <button type="button" onclick="quickFillLogin('admin', 'Admin@123')" class="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 text-center transition">
+            <span class="block text-sm">🛡️</span>
+            <span class="block text-[10px] font-bold truncate">Admin</span>
+            <span class="block text-[9px] text-emerald-600 font-mono">ADMIN</span>
+          </button>
+          <button type="button" onclick="quickFillLogin('tech.kulgam', 'Tech@123')" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-center transition">
+            <span class="block text-sm">📋</span>
+            <span class="block text-[10px] font-bold truncate">Technician</span>
+            <span class="block text-[9px] text-slate-500 font-mono">TECH</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
+        <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-600"></i>
+        <span>Protected by Cloudflare D1 Zero-Trust Edge Security</span>
+      </div>
+    </div>
   </div>
 
   <!-- ========================================== -->
@@ -3387,8 +3487,205 @@
       showToast(`Consultant ledger statement generated for ${activeDoc.name}!`);
     }
 
+
+    // ==========================================
+    // USER AUTHENTICATION & SESSION MANAGEMENT
+    // ==========================================
+    const AUTH_TOKEN_KEY = 'NEXA_LMIS_AUTH_TOKEN_V1';
+    const AUTH_USER_KEY = 'NEXA_LMIS_AUTH_USER_V1';
+
+    let currentAuthUser = null;
+    let currentAuthToken = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    try {
+      currentAuthUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY));
+    } catch (e) {
+      currentAuthUser = null;
+    }
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (currentAuthToken) {
+        headers['Authorization'] = `Bearer ${currentAuthToken}`;
+      }
+      return headers;
+    }
+
+    function updateAuthUI() {
+      const loginModal = document.getElementById('loginModal');
+      const topbarBadge = document.getElementById('topbar-user-badge');
+      const sidebarFooter = document.getElementById('sidebar-user-footer');
+
+      if (!currentAuthUser || !currentAuthToken) {
+        if (loginModal) loginModal.classList.remove('hidden');
+        if (topbarBadge) topbarBadge.classList.add('hidden');
+        if (sidebarFooter) sidebarFooter.classList.add('hidden');
+        return;
+      }
+
+      if (loginModal) loginModal.classList.add('hidden');
+      if (topbarBadge) topbarBadge.classList.remove('hidden');
+      if (sidebarFooter) sidebarFooter.classList.remove('hidden');
+
+      const name = currentAuthUser.fullName || currentAuthUser.username || 'Operator';
+      const role = currentAuthUser.role || 'TECHNICIAN';
+      const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'OP';
+
+      const topAvatar = document.getElementById('topbar-avatar');
+      const topName = document.getElementById('topbar-username');
+      const topRole = document.getElementById('topbar-userrole');
+
+      if (topAvatar) topAvatar.innerText = initials;
+      if (topName) topName.innerText = name;
+      if (topRole) {
+        topRole.innerText = role;
+        if (role === 'ADMIN') topRole.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold uppercase';
+        else if (role === 'DOCTOR') topRole.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold uppercase';
+        else topRole.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold uppercase';
+      }
+
+      const sideAvatar = document.getElementById('sidebar-avatar');
+      const sideName = document.getElementById('sidebar-username');
+      const sideRole = document.getElementById('sidebar-userrole');
+
+      if (sideAvatar) sideAvatar.innerText = initials;
+      if (sideName) sideName.innerText = name;
+      if (sideRole) sideRole.innerText = role;
+
+      // Update reporting doctor dropdowns if logged in doctor
+      if (role === 'DOCTOR' && currentAuthUser.fullName) {
+        const docName = currentAuthUser.fullName;
+        const intakeDoc = document.getElementById('in-reporting-doctor');
+        if (intakeDoc) {
+          const match = Array.from(intakeDoc.options).find(o => o.value === docName);
+          if (match) intakeDoc.value = docName;
+        }
+      }
+    }
+
+    async function checkAuthSession() {
+      if (!currentAuthToken) {
+        updateAuthUI();
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/me', { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data.ok && data.user) {
+          currentAuthUser = data.user;
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentAuthUser));
+          updateAuthUI();
+        } else {
+          // Token expired or invalid
+          handleUserLogout(false);
+        }
+      } catch (err) {
+        // Offline mode: keep cached user
+        updateAuthUI();
+      }
+    }
+
+    async function handleUserLogin(e) {
+      if (e) e.preventDefault();
+      const usernameOrEmail = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+      const submitBtn = document.getElementById('login-submit-btn');
+
+      if (!usernameOrEmail || !password) {
+        return showToast("Please enter your username and password.", "error");
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="animate-spin inline-block mr-2">⌛</span> Authenticating...`;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usernameOrEmail, password })
+        });
+        const data = await res.json();
+
+        if (data.ok && data.token) {
+          currentAuthToken = data.token;
+          currentAuthUser = data.user;
+          localStorage.setItem(AUTH_TOKEN_KEY, currentAuthToken);
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentAuthUser));
+
+          updateAuthUI();
+          showToast(`Welcome back, ${currentAuthUser.fullName}! (${currentAuthUser.role})`);
+          // Sync with D1 after successful login
+          syncWithCloudflareD1();
+        } else {
+          showToast(data.error || "Authentication failed. Check credentials.", "error");
+        }
+      } catch (err) {
+        // Offline demo fallback if worker is unreachable
+        if (usernameOrEmail === 'admin' && password === 'Admin@123') {
+          currentAuthToken = 'demo-admin-token';
+          currentAuthUser = { id: 'USR_ADMIN', username: 'admin', fullName: 'Al-Jawahira Administrator', role: 'ADMIN' };
+          localStorage.setItem(AUTH_TOKEN_KEY, currentAuthToken);
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentAuthUser));
+          updateAuthUI();
+          showToast("Signed in as Administrator (Offline Mode)");
+        } else if (usernameOrEmail === 'dr.rayees' && password === 'Doctor@123') {
+          currentAuthToken = 'demo-doc-token';
+          currentAuthUser = { id: 'USR_DOC_RAYEES', username: 'dr.rayees', fullName: 'Dr. Rayees Ahmad Tarray', role: 'DOCTOR' };
+          localStorage.setItem(AUTH_TOKEN_KEY, currentAuthToken);
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentAuthUser));
+          updateAuthUI();
+          showToast("Signed in as Dr. Rayees (Offline Mode)");
+        } else {
+          showToast("Could not reach Cloudflare authentication service.", "error");
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i><span>Sign In to Clinical Station</span>`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    async function handleUserLogout(notify = true) {
+      if (currentAuthToken) {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
+        } catch (e) {}
+      }
+      currentAuthToken = null;
+      currentAuthUser = null;
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      updateAuthUI();
+      if (notify) showToast("Logged out of Nexa-LMIS workstation.");
+    }
+
+    function quickFillLogin(user, pwd) {
+      document.getElementById('login-username').value = user;
+      document.getElementById('login-password').value = pwd;
+      handleUserLogin();
+    }
+
+    function togglePasswordVisibility() {
+      const pwdInput = document.getElementById('login-password');
+      const toggleIcon = document.getElementById('login-pwd-toggle');
+      if (!pwdInput) return;
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        pwdInput.type = 'password';
+        if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
     // Initialize application on load
     window.onload = function() {
+      checkAuthSession();
       switchTab(appState.activeTab || 'dashboard');
       // Background sync with Cloudflare D1
       syncWithCloudflareD1();

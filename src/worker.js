@@ -1,6 +1,7 @@
 /**
  * Cloudflare Worker for Nexa-LMIS | Al-Jawahira Electrophysiology Clinical Workstation
  * Compliant with Cloudflare Security Policies & Cloudflare D1 (Serverless SQLite)
+ * Includes Secure User Authentication (RBAC: Admin, Doctor, Technician)
  */
 
 const SECURITY_HEADERS = {
@@ -38,6 +39,22 @@ function handleOptions() {
 }
 
 /**
+ * Web Crypto SHA-256 Salted Password Hash
+ */
+async function hashPassword(password, salt) {
+  const enc = new TextEncoder();
+  const data = enc.encode(salt + ':' + password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function generateToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Automatically ensure Cloudflare D1 tables exist and are seeded
  */
 let schemaInitialized = false;
@@ -45,6 +62,29 @@ async function ensureD1Schema(db) {
   if (schemaInitialized || !db) return;
 
   await db.batch([
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'TECHNICIAN',
+        password_hash TEXT NOT NULL,
+        password_salt TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'ACTIVE',
+        last_login_at TEXT,
+        created_at TEXT NOT NULL
+      )
+    `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `),
     db.prepare(`
       CREATE TABLE IF NOT EXISTS facility_settings (
         id TEXT PRIMARY KEY DEFAULT 'default',
@@ -154,6 +194,21 @@ async function ensureD1Schema(db) {
     `)
   ]);
 
+  // Seed default users if empty
+  const usersCheck = await db.prepare("SELECT COUNT(*) as count FROM users").first();
+  if (!usersCheck || usersCheck.count === 0) {
+    const now = new Date().toISOString();
+    await db.batch([
+      db.prepare(`
+        INSERT INTO users (id, username, email, full_name, role, password_hash, password_salt, status, created_at)
+        VALUES 
+        ('USR_ADMIN', 'admin', 'admin@aljawahira.com', 'Al-Jawahira Administrator', 'ADMIN', '1a82233d9d94ee1bda69664ef3278c26f1b492c2231989cbeac811d5c352ede4', 'salt_admin_2026', 'ACTIVE', ?),
+        ('USR_DOC_RAYEES', 'dr.rayees', 'rayees@aljawahira.com', 'Dr. Rayees Ahmad Tarray', 'DOCTOR', '8d3839986ad7e38be81f094b9598b0b0c3f499ea1234bf1e070021ce40bf9064', 'salt_doc_2026', 'ACTIVE', ?),
+        ('USR_TECH_KULGAM', 'tech.kulgam', 'tech@aljawahira.com', 'Clinical Technologist Desk', 'TECHNICIAN', '2214da9a419272ca44eda2ba0e777cb8b1ed5fafb021f5058999d22fe04cef14', 'salt_tech_2026', 'ACTIVE', ?)
+      `).bind(now, now, now)
+    ]);
+  }
+
   // Seed default facility settings if empty
   const settingsCheck = await db.prepare("SELECT COUNT(*) as count FROM facility_settings").first();
   if (!settingsCheck || settingsCheck.count === 0) {
@@ -162,101 +217,42 @@ async function ensureD1Schema(db) {
       db.prepare(`
         INSERT INTO facility_settings (id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
         VALUES ('default', 'AL JAWAHIRA ELECTROPHYSIOLOGY', 'SpringNexa Private Limited', 'U86900JK2026PTC018519', 'DIPP238776', 'Near Gousia Pharmacy District Hospital Road Kulgam', '+91-7006318286 | +91-6006220236', 'springnexaa@okaxis', ?)
-      `).bind(now),
-
-      db.prepare(`
-        INSERT INTO reporting_doctors (id, name, designation, qualification, reg_no, department, signature_url, created_at)
-        VALUES 
-        ('DOC1', 'Dr. Rayees Ahmad Tarray', 'Consultant Neurologist & Reporting Specialist', 'DM / DNB Neurology, MBBS, MD', 'JKMC-REG-2026', 'Department of Clinical Neurophysiology', '', ?),
-        ('DOC2', 'Dr. Showkat Ahmad Mir', 'Consultant Neurophysiologist', 'DM Neurology, MBBS', 'JKMC-REG-2021', 'Department of Neurology', '', ?)
-      `).bind(now, now),
-
-      db.prepare(`
-        INSERT INTO tariffs (code, name, fee, doc_share, ref_share, updated_at)
-        VALUES
-        ('NCV',  'Nerve Conduction Velocity (Motor & Sensory)', 2500, 1000, 300, ?),
-        ('EEG',  'Routine Video Electroencephalography',        2000, 800,  250, ?),
-        ('EMG',  'Concentric Needle Electromyography',          3000, 1200, 400, ?),
-        ('RNST', 'Repetitive Nerve Stimulation Test',          2200, 900,  250, ?),
-        ('VEP',  'Visual Evoked Potential (Pattern Reversal)',  1500, 600,  200, ?),
-        ('BERA', 'Brainstem Evoked Response Audiometry',       2500, 1000, 300, ?)
-      `).bind(now, now, now, now, now, now),
-
-      db.prepare(`
-        INSERT INTO referral_partners (id, name, type, tier, created_at)
-        VALUES
-        ('RP1', 'District Hospital Kulgam', 'Govt Hospital', 1.0, ?),
-        ('RP2', 'Gousia Hospital Kulgam', 'Private Hospital', 1.0, ?),
-        ('RP3', 'Gousia Pharmacy Kulgam', 'Local Pharmacy Partner', 1.25, ?),
-        ('RP4', 'Dr. Rayees Ahmad Tarray', 'Consultant / Referring', 1.0, ?)
-      `).bind(now, now, now, now),
-
-      db.prepare(`
-        INSERT INTO expenses (id, category, name, amount, created_at)
-        VALUES
-        ('E1', 'Debt Servicing', 'Bike EMI', 3000, ?),
-        ('E2', 'Debt Servicing', 'Mobile EMI', 1088, ?),
-        ('E3', 'Operations', 'Bike Oil / Fuel', 1500, ?),
-        ('E4', 'Utilities', 'Bill LL-Power / Electricity', 500, ?),
-        ('E5', 'Operations', 'Misc Lab Expenses', 737, ?),
-        ('E6', 'Consumables', 'Medical Electrodes / Gel', 500, ?),
-        ('E7', 'Facility', 'Home / Lab Misc Overheads', 3000, ?),
-        ('E8', 'Telecom', 'Phone & Internet Recharge', 300, ?)
-      `).bind(now, now, now, now, now, now, now, now),
-
-      db.prepare(`
-        INSERT INTO ledger_entries (id, doctor_name, type, date, description, amount, created_at)
-        VALUES
-        ('L1', 'Dr. Rayees Ahmad Tarray', 'opening', 'AY 2024-25', 'Legacy Carried Forward Liability', 142800, ?),
-        ('L2', 'Dr. Rayees Ahmad Tarray', 'payout', '06-11-2026', 'Bank Settlement Transfer', 48000, ?)
-      `).bind(now, now),
-
-      db.prepare(`
-        INSERT INTO referral_payouts (id, date, partner, amount, mode, created_at)
-        VALUES ('RFP1', '2026-11-05', 'District Hospital Kulgam', 150, 'Cash', ?)
-      `).bind(now),
-
-      db.prepare(`
-        INSERT INTO patients (
-          id, token, date, name, age, gender, phone, ref_doctor, reporting_doctor,
-          modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
-          report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
-          motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
-          created_at
-        ) VALUES 
-        (
-          'P001', '1369', '2026-11-05', 'Hanan Qadir', 29, 'Male', '7006318286',
-          'District Hospital Kulgam', 'Dr. Rayees Ahmad Tarray', 'NCV', 2500, 1000, 300, 1200,
-          'UPI / QR', 'Numbness and paresthesia in left 4th and 5th fingers',
-          'NERVE CONDUCTION STUDIES REPORT',
-          'Motor Nerves Sampled:', 'Sensory Nerves Sampled:',
-          'MOTOR FINDINGS (DML, CMAP, CV):', 'SENSORY FINDINGS (Latency, Amplitude, CV):', 'F-WAVES:',
-          'Bilateral Median and Ulnar nerves.', 'Bilateral Median and Ulnar nerves.',
-          'Normal DML, CMAP and CV.',
-          'Left Ulnar: Decreased Amplitude with Normal Latency and CV\nBilateral Median and Right Ulnar: Normal Latency, Amplitude and CV.',
-          'Normal minimum Latencies.',
-          'EPS of sampled nerves is Suggestive of Left Ulnar sensory Neuropathy.',
-          ?
-        ),
-        (
-          'P002', '1370', '2026-11-06', 'Mohsina Akhter', 34, 'Female', '6006220236',
-          'Dr. Rayees Ahmad Tarray', 'Dr. Rayees Ahmad Tarray', 'NCV', 2500, 1000, 300, 1200,
-          'Cash', 'Routine upper limb screening',
-          'NERVE CONDUCTION STUDIES REPORT',
-          'Motor Nerves Sampled:', 'Sensory Nerves Sampled:',
-          'MOTOR FINDINGS (DML, CMAP, CV):', 'SENSORY FINDINGS (Latency, Amplitude, CV):', 'F-WAVES:',
-          'Bilateral Median and Ulnar nerves.', 'Bilateral Median and Ulnar nerves.',
-          'Normal DML, CMAP and CV.',
-          'Normal Latency, Amplitude and CV.',
-          'Normal minimum Latencies.',
-          'EPS of sampled nerves is Within Normal Limits.',
-          ?
-        )
-      `).bind(now, now)
+      `).bind(now)
     ]);
   }
 
   schemaInitialized = true;
+}
+
+/**
+ * Validate Authorization header token
+ */
+async function authenticateUser(request, db) {
+  const authHeader = request.headers.get('Authorization') || '';
+  if (!authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7).trim();
+  if (!token) return null;
+
+  const session = await db.prepare(`
+    SELECT s.token, s.expires_at, u.id, u.username, u.email, u.full_name, u.role, u.status
+    FROM user_sessions s
+    JOIN users u ON s.user_id = u.id
+    WHERE s.token = ? AND u.status = 'ACTIVE'
+  `).bind(token).first();
+
+  if (!session) return null;
+  if (new Date(session.expires_at) < new Date()) {
+    await db.prepare("DELETE FROM user_sessions WHERE token = ?").bind(token).run();
+    return null;
+  }
+
+  return {
+    id: session.id,
+    username: session.username,
+    email: session.email,
+    fullName: session.full_name,
+    role: session.role
+  };
 }
 
 /**
@@ -412,6 +408,130 @@ export default {
           timestamp: new Date().toISOString()
         });
       }
+
+      // ==========================================
+      // AUTHENTICATION ROUTES
+      // ==========================================
+
+      // POST /api/auth/login
+      if (url.pathname === '/api/auth/login' && request.method === 'POST') {
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+        const usernameOrEmail = String(body.usernameOrEmail || '').trim().toLowerCase();
+        const password = String(body.password || '');
+
+        if (!usernameOrEmail || !password) {
+          return jsonResponse({ error: 'Username/Email and Password are required.' }, 400);
+        }
+
+        const user = await env.DB.prepare(`
+          SELECT id, username, email, full_name, role, password_hash, password_salt, status
+          FROM users
+          WHERE (lower(username) = ? OR lower(email) = ?)
+        `).bind(usernameOrEmail, usernameOrEmail).first();
+
+        if (!user) {
+          return jsonResponse({ error: 'Invalid username, email or password.' }, 401);
+        }
+
+        if (user.status !== 'ACTIVE') {
+          return jsonResponse({ error: 'User account is deactivated. Contact administrator.' }, 403);
+        }
+
+        const calculatedHash = await hashPassword(password, user.password_salt);
+        if (calculatedHash !== user.password_hash) {
+          return jsonResponse({ error: 'Invalid username, email or password.' }, 401);
+        }
+
+        const token = generateToken();
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+
+        await env.DB.batch([
+          env.DB.prepare(`
+            INSERT INTO user_sessions (token, user_id, created_at, expires_at)
+            VALUES (?, ?, ?, ?)
+          `).bind(token, user.id, now.toISOString(), expiresAt),
+          env.DB.prepare(`
+            UPDATE users SET last_login_at = ? WHERE id = ?
+          `).bind(now.toISOString(), user.id)
+        ]);
+
+        return jsonResponse({
+          ok: true,
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            fullName: user.full_name,
+            role: user.role
+          }
+        });
+      }
+
+      // GET /api/auth/me
+      if (url.pathname === '/api/auth/me' && request.method === 'GET') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser) {
+          return jsonResponse({ ok: false, error: 'Unauthorized. Please log in.' }, 401);
+        }
+        return jsonResponse({ ok: true, user: currentUser });
+      }
+
+      // POST /api/auth/logout
+      if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization') || '';
+        if (authHeader.startsWith('Bearer ')) {
+          const token = authHeader.slice(7).trim();
+          await env.DB.prepare("DELETE FROM user_sessions WHERE token = ?").bind(token).run();
+        }
+        return jsonResponse({ ok: true, message: 'Logged out successfully.' });
+      }
+
+      // GET /api/users - List users
+      if (url.pathname === '/api/users' && request.method === 'GET') {
+        const { results = [] } = await env.DB.prepare(`
+          SELECT id, username, email, full_name, role, status, last_login_at, created_at
+          FROM users ORDER BY created_at ASC
+        `).all();
+        return jsonResponse({ ok: true, users: results });
+      }
+
+      // POST /api/users - Create User (Admin Only)
+      if (url.pathname === '/api/users' && request.method === 'POST') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+          return jsonResponse({ error: 'Administrator privilege required to create users.' }, 403);
+        }
+
+        const body = await request.json();
+        const username = String(body.username || '').trim().toLowerCase();
+        const email = String(body.email || '').trim().toLowerCase();
+        const fullName = String(body.fullName || '').trim();
+        const role = String(body.role || 'TECHNICIAN').toUpperCase();
+        const password = String(body.password || 'Nexa@2026');
+
+        if (!username || !email || !fullName) {
+          return jsonResponse({ error: 'Username, email and full name are required.' }, 400);
+        }
+
+        const salt = 'salt_' + crypto.randomUUID().slice(0, 8);
+        const passwordHash = await hashPassword(password, salt);
+        const id = 'USR_' + Date.now();
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO users (id, username, email, full_name, role, password_hash, password_salt, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+        `).bind(id, username, email, fullName, role, passwordHash, salt, now).run();
+
+        return jsonResponse({ ok: true, id, message: `User ${username} created successfully.` }, 201);
+      }
+
+      // ==========================================
+      // CLINICAL DATA ROUTES
+      // ==========================================
 
       // GET /api/state - Full State for Client Init & Sync
       if (url.pathname === '/api/state' && request.method === 'GET') {
