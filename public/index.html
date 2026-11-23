@@ -1403,6 +1403,10 @@
               <label class="block font-bold text-slate-700 mb-1">DPIIT Startup Recognition No</label>
               <input type="text" id="cfg-dpiit" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-mono" />
             </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Clinical Establishment Reg. No. (CEA / DHS)</label>
+              <input type="text" id="cfg-cea" placeholder="e.g. CEA/JK/2026/0189 or DHS Reg No" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-mono font-semibold" />
+            </div>
             <div class="sm:col-span-2">
               <label class="block font-bold text-slate-700 mb-1">Facility Physical Address</label>
               <input type="text" id="cfg-address" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium" />
@@ -2199,6 +2203,7 @@
         parentEntity: 'Nexa-LMIS Enterprise Network',
         cin: 'U86900JK2026PTC018519',
         dpiit: 'DIPP238776',
+        ceaRegNo: 'CEA/JK/2026/0189',
         address: 'Near Gousia Pharmacy District Hospital Road Kulgam',
         phones: '+91-7006318286 | +91-6006220236',
         vpa: 'springnexaa@okaxis'
@@ -2706,7 +2711,10 @@
       document.getElementById('topbar-facility-title').innerText = st.facilityName;
       document.getElementById('topbar-facility-sub').innerText = `Center For NeuroDiagnostics • Operated by ${st.parentEntity}`;
       document.getElementById('dash-banner-name').innerText = st.facilityName;
-      document.getElementById('dash-banner-meta').innerText = `CIN: ${st.cin} • DPIIT: ${st.dpiit} • ${st.address}`;
+      let bannerMeta = `CIN: ${st.cin} • DPIIT: ${st.dpiit}`;
+      if (st.ceaRegNo) bannerMeta += ` • CEA: ${st.ceaRegNo}`;
+      bannerMeta += ` • ${st.address}`;
+      document.getElementById('dash-banner-meta').innerText = bannerMeta;
       document.getElementById('sidebar-patient-count').innerText = appState.patients.length;
 
       // Financial calculations
@@ -3683,7 +3691,9 @@
 
       document.getElementById('rep-header-name').innerText = st.facilityName;
       document.getElementById('rep-header-sub').innerText = `Center For NeuroDiagnostics • Operated by ${st.parentEntity}`;
-      document.getElementById('rep-header-reg').innerText = `CIN: ${st.cin} | DPIIT Reg. No: ${st.dpiit}`;
+      let regLine = `CIN: ${st.cin || 'N/A'} | DPIIT: ${st.dpiit || 'N/A'}`;
+      if (st.ceaRegNo) regLine += ` | CEA Reg: ${st.ceaRegNo}`;
+      document.getElementById('rep-header-reg').innerText = regLine;
       document.getElementById('rep-header-address').innerText = `${st.address} • Contact: ${st.phones}`;
 
       const activeDoc = (appState.reportingDoctors || []).find(d => d.name === (p.reportingDoctor || '')) || appState.reportingDoctors[0] || { name: 'Dr. Rayees Ahmad Tarray', designation: 'Consultant Neurologist', qualification: 'DM Neurology', regNo: 'JKMC-REG-2026', signatureUrl: '' };
@@ -3971,9 +3981,10 @@
       const st = appState.settings;
       if (document.getElementById('cfg-name')) document.getElementById('cfg-name').value = st.facilityName;
       if (document.getElementById('cfg-parent')) document.getElementById('cfg-parent').value = st.parentEntity;
-      if (document.getElementById('cfg-cin')) document.getElementById('cfg-cin').value = st.cin;
-      if (document.getElementById('cfg-dpiit')) document.getElementById('cfg-dpiit').value = st.dpiit;
-      if (document.getElementById('cfg-address')) document.getElementById('cfg-address').value = st.address;
+      if (document.getElementById('cfg-cin')) document.getElementById('cfg-cin').value = st.cin || '';
+      if (document.getElementById('cfg-dpiit')) document.getElementById('cfg-dpiit').value = st.dpiit || '';
+      if (document.getElementById('cfg-cea')) document.getElementById('cfg-cea').value = st.ceaRegNo || '';
+      if (document.getElementById('cfg-address')) document.getElementById('cfg-address').value = st.address || '';
       if (document.getElementById('cfg-phones')) document.getElementById('cfg-phones').value = st.phones;
       if (document.getElementById('cfg-vpa')) document.getElementById('cfg-vpa').value = st.vpa;
     }
@@ -4272,6 +4283,7 @@
       st.parentEntity = document.getElementById('cfg-parent').value.trim() || st.parentEntity;
       st.cin = document.getElementById('cfg-cin').value.trim() || st.cin;
       st.dpiit = document.getElementById('cfg-dpiit').value.trim() || st.dpiit;
+      st.ceaRegNo = (document.getElementById('cfg-cea')?.value || '').trim();
       st.address = document.getElementById('cfg-address').value.trim() || st.address;
       st.phones = document.getElementById('cfg-phones').value.trim() || st.phones;
       st.vpa = document.getElementById('cfg-vpa').value.trim() || st.vpa;
@@ -5176,7 +5188,9 @@
 
       if (fName) fName.innerText = st.facilityName || 'AL JAWAHIRA ELECTROPHYSIOLOGY';
       if (fParent) fParent.innerText = `Center For NeuroDiagnostics • Operated by ${st.parentEntity || 'SpringNexa Private Limited'}`;
-      if (fContact) fContact.innerText = `${st.address || 'Hospital Road, District Bypass'} • Contact: ${st.phones || '+91-7006840000'}`;
+      let rcptContact = `${st.address || 'Hospital Road, District Bypass'} • Contact: ${st.phones || '+91-7006840000'}`;
+      if (st.ceaRegNo) rcptContact = `CEA Reg: ${st.ceaRegNo} • ` + rcptContact;
+      if (fContact) fContact.innerText = rcptContact;
 
       const tokenEl = document.getElementById('rcpt-token');
       const nameEl = document.getElementById('rcpt-name');

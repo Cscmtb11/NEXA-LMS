@@ -222,6 +222,7 @@ async function ensureD1Schema(db) {
   try { await db.prepare("ALTER TABLE patients ADD COLUMN address TEXT").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE expenses ADD COLUMN updated_at TEXT").run(); } catch (_) {}
   try { await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_tariffs_tenant_code ON tariffs (tenant_id, code)").run(); } catch (_) {}
+  try { await db.prepare("ALTER TABLE facility_settings ADD COLUMN cea_reg_no TEXT").run(); } catch (_) {}
 
   // Ensure default primary tenant
   const now = new Date().toISOString();
@@ -436,6 +437,7 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
       parentEntity: settingsRow.parent_entity,
       cin: settingsRow.cin,
       dpiit: settingsRow.dpiit,
+      ceaRegNo: settingsRow.cea_reg_no || '',
       address: settingsRow.address,
       phones: settingsRow.phones,
       vpa: settingsRow.vpa
@@ -444,6 +446,7 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
       parentEntity: 'Nexa-LMIS Enterprise Network',
       cin: '',
       dpiit: '',
+      ceaRegNo: '',
       address: 'Clinical Diagnostic Facility',
       phones: '',
       vpa: ''
@@ -1026,13 +1029,14 @@ export default {
         if (body.settings) {
           const settingId = tenantId === 'default' ? 'default' : ('setting_' + tenantId);
           stmts.push(env.DB.prepare(`
-            INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, cea_reg_no, address, phones, vpa, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               facility_name=excluded.facility_name,
               parent_entity=excluded.parent_entity,
               cin=excluded.cin,
               dpiit=excluded.dpiit,
+              cea_reg_no=excluded.cea_reg_no,
               address=excluded.address,
               phones=excluded.phones,
               vpa=excluded.vpa,
@@ -1044,6 +1048,7 @@ export default {
             String(body.settings.parentEntity || ''),
             String(body.settings.cin || ''),
             String(body.settings.dpiit || ''),
+            String(body.settings.ceaRegNo || ''),
             String(body.settings.address || ''),
             String(body.settings.phones || ''),
             String(body.settings.vpa || ''),
@@ -1310,13 +1315,14 @@ export default {
         const now = new Date().toISOString();
         const settingId = tenantId === 'default' ? 'default' : ('setting_' + tenantId);
         await env.DB.prepare(`
-          INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, cea_reg_no, address, phones, vpa, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             facility_name=excluded.facility_name,
             parent_entity=excluded.parent_entity,
             cin=excluded.cin,
             dpiit=excluded.dpiit,
+            cea_reg_no=excluded.cea_reg_no,
             address=excluded.address,
             phones=excluded.phones,
             vpa=excluded.vpa,
@@ -1324,6 +1330,7 @@ export default {
         `).bind(
           settingId, tenantId,
           String(st.facilityName || ''), String(st.parentEntity || ''), String(st.cin || ''), String(st.dpiit || ''),
+          String(st.ceaRegNo || ''),
           String(st.address || ''), String(st.phones || ''), String(st.vpa || ''), now
         ).run();
         return jsonResponse({ ok: true });
