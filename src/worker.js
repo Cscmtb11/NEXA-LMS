@@ -220,6 +220,8 @@ async function ensureD1Schema(db) {
   try { await db.prepare("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE users ADD COLUMN password_changed_at TEXT").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE patients ADD COLUMN address TEXT").run(); } catch (_) {}
+  try { await db.prepare("ALTER TABLE expenses ADD COLUMN updated_at TEXT").run(); } catch (_) {}
+  try { await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_tariffs_tenant_code ON tariffs (tenant_id, code)").run(); } catch (_) {}
 
   // Ensure default primary tenant
   const now = new Date().toISOString();
@@ -474,7 +476,8 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+    try {
+      const url = new URL(request.url);
 
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
@@ -1021,6 +1024,7 @@ export default {
 
         // 1. Settings
         if (body.settings) {
+          const settingId = tenantId === 'default' ? 'default' : ('setting_' + tenantId);
           stmts.push(env.DB.prepare(`
             INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1034,15 +1038,15 @@ export default {
               vpa=excluded.vpa,
               updated_at=excluded.updated_at
           `).bind(
-            'setting_' + tenantId,
+            settingId,
             tenantId,
-            body.settings.facilityName || '',
-            body.settings.parentEntity || '',
-            body.settings.cin || '',
-            body.settings.dpiit || '',
-            body.settings.address || '',
-            body.settings.phones || '',
-            body.settings.vpa || '',
+            String(body.settings.facilityName || ''),
+            String(body.settings.parentEntity || ''),
+            String(body.settings.cin || ''),
+            String(body.settings.dpiit || ''),
+            String(body.settings.address || ''),
+            String(body.settings.phones || ''),
+            String(body.settings.vpa || ''),
             now
           ));
         }
@@ -1050,7 +1054,7 @@ export default {
         // 2. Reporting Doctors
         if (Array.isArray(body.reportingDoctors)) {
           body.reportingDoctors.forEach(d => {
-            if (!d.name) return;
+            if (!d || !d.name) return;
             const docId = d.id || ('DOC_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
             stmts.push(env.DB.prepare(`
               INSERT INTO reporting_doctors (id, tenant_id, name, designation, qualification, reg_no, department, signature_url, created_at)
@@ -1063,8 +1067,8 @@ export default {
                 department=excluded.department,
                 signature_url=excluded.signature_url
             `).bind(
-              docId, tenantId, d.name, d.designation || '', d.qualification || '',
-              d.regNo || '', d.department || '', d.signatureUrl || '', now
+              docId, tenantId, String(d.name), String(d.designation || ''), String(d.qualification || ''),
+              String(d.regNo || ''), String(d.department || ''), String(d.signatureUrl || ''), now
             ));
           });
         }
@@ -1072,20 +1076,20 @@ export default {
         // 3. Tariffs
         if (body.tariffs && typeof body.tariffs === 'object') {
           Object.values(body.tariffs).forEach(t => {
-            if (!t.code) return;
+            if (!t || !t.code) return;
             stmts.push(env.DB.prepare(`
               INSERT INTO tariffs (code, tenant_id, name, fee, doc_share, ref_share, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(tenant_id, code) DO UPDATE SET
-                name=excluded.name, fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share, updated_at=excluded.updated_at
-            `).bind(t.code, tenantId, t.name || t.code, Number(t.fee) || 0, Number(t.docShare) || 0, Number(t.refShare) || 0, now));
+              ON CONFLICT(code) DO UPDATE SET
+                tenant_id=excluded.tenant_id, name=excluded.name, fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share, updated_at=excluded.updated_at
+            `).bind(String(t.code), tenantId, String(t.name || t.code), Number(t.fee) || 0, Number(t.docShare) || 0, Number(t.refShare) || 0, now));
           });
         }
 
-        // 4. Patients (with address)
+        // 4. Patients (with address & full defensive fallbacks)
         if (Array.isArray(body.patients)) {
           body.patients.forEach(p => {
-            if (!p.token || !p.name) return;
+            if (!p || (!p.token && !p.name)) return;
             const pid = p.id || ('P' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
             stmts.push(env.DB.prepare(`
               INSERT INTO patients (
@@ -1107,70 +1111,71 @@ export default {
                 motor_findings=excluded.motor_findings, sensory_findings=excluded.sensory_findings,
                 fwaves_findings=excluded.fwaves_findings, impression=excluded.impression
             `).bind(
-              pid, tenantId, String(p.token), p.date, p.name, Number(p.age) || 0, p.gender || 'Other', p.phone || '',
-              p.address || '', p.refDoctor || '', p.reportingDoctor || '', p.modality || 'NCV',
+              pid, tenantId, String(p.token || '0'), String(p.date || now.split('T')[0]), String(p.name || 'Unnamed Patient'),
+              Number(p.age) || 0, String(p.gender || 'Other'), String(p.phone || ''),
+              String(p.address || ''), String(p.refDoctor || 'Self'), String(p.reportingDoctor || ''), String(p.modality || 'NCV'),
               Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
-              p.payMode || 'UPI / QR', p.indication || '', p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT',
-              p.lblParam1 || '', p.lblParam2 || '', p.lblSec1 || '', p.lblSec2 || '', p.lblSec3 || '',
-              p.motorSampled || '', p.sensorySampled || '', p.motorFindings || '', p.sensoryFindings || '',
-              p.fwavesFindings || '', p.impression || '', now
+              String(p.payMode || 'UPI / QR'), String(p.indication || ''), String(p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT'),
+              String(p.lblParam1 || ''), String(p.lblParam2 || ''), String(p.lblSec1 || ''), String(p.lblSec2 || ''), String(p.lblSec3 || ''),
+              String(p.motorSampled || ''), String(p.sensorySampled || ''), String(p.motorFindings || ''), String(p.sensoryFindings || ''),
+              String(p.fwavesFindings || ''), String(p.impression || ''), now
             ));
           });
         }
 
-        // 5. Expenses
+        // 5. Expenses (includes created_at AND updated_at)
         if (Array.isArray(body.expenses)) {
           body.expenses.forEach(e => {
-            if (!e.name) return;
-            const expId = e.id || ('EXP_' + tenantId + '_' + e.category + '_' + e.name.replace(/\s+/g, '_'));
+            if (!e || !e.name) return;
+            const expId = e.id || ('EXP_' + tenantId + '_' + (e.category || 'OPEX') + '_' + String(e.name).replace(/\s+/g, '_'));
             stmts.push(env.DB.prepare(`
-              INSERT INTO expenses (id, tenant_id, category, name, amount, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?)
+              INSERT INTO expenses (id, tenant_id, category, name, amount, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 category=excluded.category, name=excluded.name, amount=excluded.amount, updated_at=excluded.updated_at
-            `).bind(expId, tenantId, e.category || 'OPEX', e.name, Number(e.amount) || 0, now));
+            `).bind(expId, tenantId, String(e.category || 'OPEX'), String(e.name), Number(e.amount) || 0, now, now));
           });
         }
 
         // 6. Referral Partners
         if (Array.isArray(body.referralPartners)) {
           body.referralPartners.forEach(rp => {
-            if (!rp.name) return;
+            if (!rp || !rp.name) return;
             const rpid = rp.id || ('RP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
             stmts.push(env.DB.prepare(`
               INSERT INTO referral_partners (id, tenant_id, name, type, tier, created_at)
               VALUES (?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 name=excluded.name, type=excluded.type, tier=excluded.tier
-            `).bind(rpid, tenantId, rp.name, rp.type || 'Clinic', Number(rp.tier) || 1.0, now));
+            `).bind(rpid, tenantId, String(rp.name), String(rp.type || 'Clinic'), Number(rp.tier) || 1.0, now));
           });
         }
 
         // 7. Referral Payouts
         if (Array.isArray(body.referralPayouts)) {
           body.referralPayouts.forEach(po => {
-            if (!po.partner) return;
+            if (!po || !po.partner) return;
             const poid = po.id || ('PO_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
             stmts.push(env.DB.prepare(`
               INSERT INTO referral_payouts (id, tenant_id, date, partner, amount, mode, created_at)
               VALUES (?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 date=excluded.date, partner=excluded.partner, amount=excluded.amount, mode=excluded.mode
-            `).bind(poid, tenantId, po.date, po.partner, Number(po.amount) || 0, po.mode || 'Cash', now));
+            `).bind(poid, tenantId, String(po.date || now.split('T')[0]), String(po.partner), Number(po.amount) || 0, String(po.mode || 'Cash'), now));
           });
         }
 
         // 8. Ledger Entries
         if (Array.isArray(body.ledgerEntries)) {
           body.ledgerEntries.forEach(le => {
-            if (!le.doctorName) return;
+            if (!le || !le.doctorName) return;
             const leid = le.id || ('LE_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
             stmts.push(env.DB.prepare(`
               INSERT INTO ledger_entries (id, tenant_id, doctor_name, type, date, description, amount, created_at)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 doctor_name=excluded.doctor_name, type=excluded.type, date=excluded.date, description=excluded.description, amount=excluded.amount
-            `).bind(leid, tenantId, le.doctorName, le.type || 'credit', le.date || now, le.description || '', Number(le.amount) || 0, now));
+            `).bind(leid, tenantId, String(le.doctorName), String(le.type || 'credit'), String(le.date || now.split('T')[0]), String(le.description || le.desc || ''), Number(le.amount) || 0, now));
           });
         }
 
@@ -1218,14 +1223,14 @@ export default {
             motor_findings=excluded.motor_findings, sensory_findings=excluded.sensory_findings,
             fwaves_findings=excluded.fwaves_findings, impression=excluded.impression
         `).bind(
-          id, tenantId, String(p.token), p.date, p.name, Number(p.age) || 0, p.gender, p.phone || '',
-          p.address || '',
-          p.refDoctor || '', p.reportingDoctor || '', p.modality,
+          id, tenantId, String(p.token || '0'), String(p.date || now.split('T')[0]), String(p.name || 'Unnamed Patient'),
+          Number(p.age) || 0, String(p.gender || 'Other'), String(p.phone || ''),
+          String(p.address || ''), String(p.refDoctor || 'Self'), String(p.reportingDoctor || ''), String(p.modality || 'NCV'),
           Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
-          p.payMode || 'UPI / QR', p.indication || '', p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT',
-          p.lblParam1 || '', p.lblParam2 || '', p.lblSec1 || '', p.lblSec2 || '', p.lblSec3 || '',
-          p.motorSampled || '', p.sensorySampled || '', p.motorFindings || '', p.sensoryFindings || '',
-          p.fwavesFindings || '', p.impression || '', now
+          String(p.payMode || 'UPI / QR'), String(p.indication || ''), String(p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT'),
+          String(p.lblParam1 || ''), String(p.lblParam2 || ''), String(p.lblSec1 || ''), String(p.lblSec2 || ''), String(p.lblSec3 || ''),
+          String(p.motorSampled || ''), String(p.sensorySampled || ''), String(p.motorFindings || ''), String(p.sensoryFindings || ''),
+          String(p.fwavesFindings || ''), String(p.impression || ''), now
         ).run();
 
         return jsonResponse({ ok: true, id, message: 'Patient saved to organization database.' });
@@ -1285,7 +1290,8 @@ export default {
           await env.DB.prepare(`
             INSERT INTO tariffs (code, tenant_id, name, fee, doc_share, ref_share, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(tenant_id, code) DO UPDATE SET
+            ON CONFLICT(code) DO UPDATE SET
+              tenant_id=excluded.tenant_id,
               name=excluded.name,
               fee=excluded.fee,
               doc_share=excluded.doc_share,
@@ -1302,6 +1308,7 @@ export default {
         const tenantId = resolveTenantId(request, currentUser);
         const st = await request.json();
         const now = new Date().toISOString();
+        const settingId = tenantId === 'default' ? 'default' : ('setting_' + tenantId);
         await env.DB.prepare(`
           INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1315,8 +1322,9 @@ export default {
             vpa=excluded.vpa,
             updated_at=excluded.updated_at
         `).bind(
-          'setting_' + tenantId, tenantId, st.facilityName, st.parentEntity, st.cin, st.dpiit,
-          st.address, st.phones, st.vpa, now
+          settingId, tenantId,
+          String(st.facilityName || ''), String(st.parentEntity || ''), String(st.cin || ''), String(st.dpiit || ''),
+          String(st.address || ''), String(st.phones || ''), String(st.vpa || ''), now
         ).run();
         return jsonResponse({ ok: true });
       }
@@ -1401,9 +1409,11 @@ export default {
         const id = e.id || ('E' + Date.now());
         const now = new Date().toISOString();
         await env.DB.prepare(`
-          INSERT INTO expenses (id, tenant_id, category, name, amount, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).bind(id, tenantId, e.category || 'Operations', e.name, Number(e.amount) || 0, now).run();
+          INSERT INTO expenses (id, tenant_id, category, name, amount, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            category=excluded.category, name=excluded.name, amount=excluded.amount, updated_at=excluded.updated_at
+        `).bind(id, tenantId, String(e.category || 'Operations'), String(e.name), Number(e.amount) || 0, now, now).run();
         return jsonResponse({ ok: true, id });
       }
 
@@ -1425,5 +1435,13 @@ export default {
 
     // Serve static workstation assets
     return env.ASSETS.fetch(request);
+    } catch (err) {
+      console.error('Unhandled Cloudflare Worker error:', err);
+      return jsonResponse({
+        ok: false,
+        error: err.message || 'Internal Cloudflare D1 server error',
+        stack: err.stack || ''
+      }, 500);
+    }
   }
 };

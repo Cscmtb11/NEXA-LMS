@@ -2322,8 +2322,13 @@
         const res = await fetch('/api/state' + tenantQuery, {
           headers: getAuthHeaders()
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = null;
+        }
+        if (!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
         if (data.ok && data.state) {
           const remote = data.state;
           if (remote.settings) appState.settings = remote.settings;
@@ -2356,9 +2361,16 @@
           headers: getAuthHeaders(),
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (data.ok) {
+        let data;
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = null;
+        }
+        if (!res.ok) {
+          throw new Error(data?.error || `HTTP ${res.status}`);
+        }
+        if (data && data.ok) {
           setCloudStatus('connected', 'Cloudflare D1 Online');
           if (data.state) {
             appState = data.state;
@@ -2367,10 +2379,13 @@
           }
           showToast(data.message || 'Workstation records securely mirrored to Cloudflare D1!', 'success');
           return true;
+        } else {
+          throw new Error(data?.error || 'Synchronization failed');
         }
       } catch (err) {
+        console.warn('Cloudflare D1 sync error:', err);
         setCloudStatus('offline', 'Local Cache (Offline)');
-        showToast('Saved locally; Cloudflare D1 sync will retry when online.', 'error');
+        showToast((err.message || 'Saved locally; Cloudflare D1 sync will retry when online.'), 'error');
         return false;
       }
     }
@@ -3295,7 +3310,7 @@
       if (targetRecord) {
         fetch('/api/patients', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(targetRecord)
         }).catch(err => setCloudStatus('offline'));
       }
