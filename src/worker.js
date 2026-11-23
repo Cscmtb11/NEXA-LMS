@@ -219,6 +219,7 @@ async function ensureD1Schema(db) {
   // Ensure user password columns exist
   try { await db.prepare("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE users ADD COLUMN password_changed_at TEXT").run(); } catch (_) {}
+  try { await db.prepare("ALTER TABLE patients ADD COLUMN address TEXT").run(); } catch (_) {}
 
   // Ensure default primary tenant
   const now = new Date().toISOString();
@@ -379,6 +380,7 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
     age: p.age,
     gender: p.gender,
     phone: p.phone,
+    address: p.address || '',
     refDoctor: p.ref_doctor,
     reportingDoctor: p.reporting_doctor,
     modality: p.modality,
@@ -1008,15 +1010,18 @@ export default {
         return jsonResponse({ ok: true, state, role: currentUser?.role || 'GUEST', tenantId });
       }
 
-      // POST /api/sync - Bulk Push State to Cloudflare D1
+      // POST /api/sync - Bulk Restore & Push Full Workstation State to Cloudflare D1
       if (url.pathname === '/api/sync' && request.method === 'POST') {
         const currentUser = await authenticateUser(request, env.DB);
         const tenantId = resolveTenantId(request, currentUser);
         const body = await request.json();
         const now = new Date().toISOString();
 
+        const stmts = [];
+
+        // 1. Settings
         if (body.settings) {
-          await env.DB.prepare(`
+          stmts.push(env.DB.prepare(`
             INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
@@ -1039,11 +1044,150 @@ export default {
             body.settings.phones || '',
             body.settings.vpa || '',
             now
-          ).run();
+          ));
+        }
+
+        // 2. Reporting Doctors
+        if (Array.isArray(body.reportingDoctors)) {
+          body.reportingDoctors.forEach(d => {
+            if (!d.name) return;
+            const docId = d.id || ('DOC_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+            stmts.push(env.DB.prepare(`
+              INSERT INTO reporting_doctors (id, tenant_id, name, designation, qualification, reg_no, department, signature_url, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                name=excluded.name,
+                designation=excluded.designation,
+                qualification=excluded.qualification,
+                reg_no=excluded.reg_no,
+                department=excluded.department,
+                signature_url=excluded.signature_url
+            `).bind(
+              docId, tenantId, d.name, d.designation || '', d.qualification || '',
+              d.regNo || '', d.department || '', d.signatureUrl || '', now
+            ));
+          });
+        }
+
+        // 3. Tariffs
+        if (body.tariffs && typeof body.tariffs === 'object') {
+          Object.values(body.tariffs).forEach(t => {
+            if (!t.code) return;
+            stmts.push(env.DB.prepare(`
+              INSERT INTO tariffs (code, tenant_id, name, fee, doc_share, ref_share, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(tenant_id, code) DO UPDATE SET
+                name=excluded.name, fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share, updated_at=excluded.updated_at
+            `).bind(t.code, tenantId, t.name || t.code, Number(t.fee) || 0, Number(t.docShare) || 0, Number(t.refShare) || 0, now));
+          });
+        }
+
+        // 4. Patients (with address)
+        if (Array.isArray(body.patients)) {
+          body.patients.forEach(p => {
+            if (!p.token || !p.name) return;
+            const pid = p.id || ('P' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+            stmts.push(env.DB.prepare(`
+              INSERT INTO patients (
+                id, tenant_id, token, date, name, age, gender, phone, address, ref_doctor, reporting_doctor,
+                modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
+                report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
+                motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
+                created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                token=excluded.token, date=excluded.date, name=excluded.name, age=excluded.age,
+                gender=excluded.gender, phone=excluded.phone, address=excluded.address, ref_doctor=excluded.ref_doctor,
+                reporting_doctor=excluded.reporting_doctor, modality=excluded.modality,
+                fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share,
+                net_lab=excluded.net_lab, pay_mode=excluded.pay_mode, indication=excluded.indication,
+                report_title=excluded.report_title, lbl_param1=excluded.lbl_param1, lbl_param2=excluded.lbl_param2,
+                lbl_sec1=excluded.lbl_sec1, lbl_sec2=excluded.lbl_sec2, lbl_sec3=excluded.lbl_sec3,
+                motor_sampled=excluded.motor_sampled, sensory_sampled=excluded.sensory_sampled,
+                motor_findings=excluded.motor_findings, sensory_findings=excluded.sensory_findings,
+                fwaves_findings=excluded.fwaves_findings, impression=excluded.impression
+            `).bind(
+              pid, tenantId, String(p.token), p.date, p.name, Number(p.age) || 0, p.gender || 'Other', p.phone || '',
+              p.address || '', p.refDoctor || '', p.reportingDoctor || '', p.modality || 'NCV',
+              Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
+              p.payMode || 'UPI / QR', p.indication || '', p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT',
+              p.lblParam1 || '', p.lblParam2 || '', p.lblSec1 || '', p.lblSec2 || '', p.lblSec3 || '',
+              p.motorSampled || '', p.sensorySampled || '', p.motorFindings || '', p.sensoryFindings || '',
+              p.fwavesFindings || '', p.impression || '', now
+            ));
+          });
+        }
+
+        // 5. Expenses
+        if (Array.isArray(body.expenses)) {
+          body.expenses.forEach(e => {
+            if (!e.name) return;
+            const expId = e.id || ('EXP_' + tenantId + '_' + e.category + '_' + e.name.replace(/\s+/g, '_'));
+            stmts.push(env.DB.prepare(`
+              INSERT INTO expenses (id, tenant_id, category, name, amount, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                category=excluded.category, name=excluded.name, amount=excluded.amount, updated_at=excluded.updated_at
+            `).bind(expId, tenantId, e.category || 'OPEX', e.name, Number(e.amount) || 0, now));
+          });
+        }
+
+        // 6. Referral Partners
+        if (Array.isArray(body.referralPartners)) {
+          body.referralPartners.forEach(rp => {
+            if (!rp.name) return;
+            const rpid = rp.id || ('RP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+            stmts.push(env.DB.prepare(`
+              INSERT INTO referral_partners (id, tenant_id, name, type, tier, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                name=excluded.name, type=excluded.type, tier=excluded.tier
+            `).bind(rpid, tenantId, rp.name, rp.type || 'Clinic', Number(rp.tier) || 1.0, now));
+          });
+        }
+
+        // 7. Referral Payouts
+        if (Array.isArray(body.referralPayouts)) {
+          body.referralPayouts.forEach(po => {
+            if (!po.partner) return;
+            const poid = po.id || ('PO_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+            stmts.push(env.DB.prepare(`
+              INSERT INTO referral_payouts (id, tenant_id, date, partner, amount, mode, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                date=excluded.date, partner=excluded.partner, amount=excluded.amount, mode=excluded.mode
+            `).bind(poid, tenantId, po.date, po.partner, Number(po.amount) || 0, po.mode || 'Cash', now));
+          });
+        }
+
+        // 8. Ledger Entries
+        if (Array.isArray(body.ledgerEntries)) {
+          body.ledgerEntries.forEach(le => {
+            if (!le.doctorName) return;
+            const leid = le.id || ('LE_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+            stmts.push(env.DB.prepare(`
+              INSERT INTO ledger_entries (id, tenant_id, doctor_name, type, date, description, amount, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                doctor_name=excluded.doctor_name, type=excluded.type, date=excluded.date, description=excluded.description, amount=excluded.amount
+            `).bind(leid, tenantId, le.doctorName, le.type || 'credit', le.date || now, le.description || '', Number(le.amount) || 0, now));
+          });
+        }
+
+        // Execute in safe chunks of 40 statements
+        for (let i = 0; i < stmts.length; i += 40) {
+          const chunk = stmts.slice(i, i + 40);
+          if (chunk.length > 0) {
+            await env.DB.batch(chunk);
+          }
         }
 
         const updatedState = await getFullState(env.DB, currentUser?.role, tenantId);
-        return jsonResponse({ ok: true, state: updatedState });
+        return jsonResponse({
+          ok: true,
+          message: `Workstation vault successfully synchronized to Cloudflare D1 (${stmts.length} operations).`,
+          state: updatedState
+        });
       }
 
       // POST /api/patients - Register or Update Patient
@@ -1056,15 +1200,15 @@ export default {
 
         await env.DB.prepare(`
           INSERT INTO patients (
-            id, tenant_id, token, date, name, age, gender, phone, ref_doctor, reporting_doctor,
+            id, tenant_id, token, date, name, age, gender, phone, address, ref_doctor, reporting_doctor,
             modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
             report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
             motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
             created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             token=excluded.token, date=excluded.date, name=excluded.name, age=excluded.age,
-            gender=excluded.gender, phone=excluded.phone, ref_doctor=excluded.ref_doctor,
+            gender=excluded.gender, phone=excluded.phone, address=excluded.address, ref_doctor=excluded.ref_doctor,
             reporting_doctor=excluded.reporting_doctor, modality=excluded.modality,
             fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share,
             net_lab=excluded.net_lab, pay_mode=excluded.pay_mode, indication=excluded.indication,
@@ -1075,6 +1219,7 @@ export default {
             fwaves_findings=excluded.fwaves_findings, impression=excluded.impression
         `).bind(
           id, tenantId, String(p.token), p.date, p.name, Number(p.age) || 0, p.gender, p.phone || '',
+          p.address || '',
           p.refDoctor || '', p.reportingDoctor || '', p.modality,
           Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
           p.payMode || 'UPI / QR', p.indication || '', p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT',

@@ -55,14 +55,35 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Print Stylesheet for Official Medical Letterhead */
+    /* Print Stylesheet for Official Medical Letterhead & Receipts */
     @media print {
       body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
-      #app-sidebar, #app-topbar, .no-print, #toast-container, #cf-status-bar { display: none !important; }
+      #app-sidebar, #app-topbar, .no-print, #toast-container, #cf-status-bar, #loginModal, #masterAddTenantModal, #changePasswordModal, #patientModal, #doctorModal { display: none !important; }
       #main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; overflow: visible !important; }
-      .view-section { display: none !important; }
-      #view-report { display: block !important; padding: 0 !important; margin: 0 !important; }
-      #printable-report-area {
+
+      body.printing-receipt .view-section { display: none !important; }
+      body.printing-receipt #printable-receipt-modal {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        inset: auto !important;
+        z-index: auto !important;
+      }
+      body.printing-receipt #printable-receipt-card {
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 4mm !important;
+        margin: 0 !important;
+      }
+      body.printing-receipt .receipt-modal-actions { display: none !important; }
+
+      body:not(.printing-receipt) .view-section { display: none !important; }
+      body:not(.printing-receipt) #view-report { display: block !important; padding: 0 !important; margin: 0 !important; }
+      body:not(.printing-receipt) #printable-report-area {
         box-shadow: none !important;
         border: none !important;
         width: 100% !important;
@@ -655,20 +676,25 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                <div class="sm:col-span-5">
                   <label class="block font-bold text-slate-700 mb-1">Contact Mobile Number</label>
                   <input type="tel" id="in-phone" placeholder="10-digit mobile number" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
                 </div>
-                <div>
-                  <div class="flex items-center justify-between mb-1">
-                    <label class="block font-bold text-slate-700">Referring Doctor / Local Clinic</label>
-                    <select id="in-ref-quickpick" onchange="applyQuickReferrer(this.value)" class="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded border border-blue-200 focus:outline-none">
-                      <option value="">+ Quick Select Partner</option>
-                    </select>
-                  </div>
-                  <input type="text" id="in-refdoc" placeholder="e.g. District Hospital Kulgam / Dr. Rayees Ahmad Tarray" oninput="handleModalityOrRefChange()" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
+                <div class="sm:col-span-7">
+                  <label class="block font-bold text-slate-700 mb-1">Residential Address / City / Tehsil</label>
+                  <input type="text" id="in-address" placeholder="e.g. Yaripora, Kulgam / Anantnag" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
                 </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block font-bold text-slate-700">Referring Doctor / Local Clinic</label>
+                  <select id="in-ref-quickpick" onchange="applyQuickReferrer(this.value)" class="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded border border-blue-200 focus:outline-none">
+                    <option value="">+ Quick Select Partner</option>
+                  </select>
+                </div>
+                <input type="text" id="in-refdoc" placeholder="e.g. District Hospital Kulgam / Dr. Rayees Ahmad Tarray" oninput="handleModalityOrRefChange()" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -724,6 +750,9 @@
               <div class="pt-2 flex flex-wrap items-center gap-3">
                 <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-5 rounded-xl shadow-md shadow-brand-600/20 flex items-center justify-center gap-2 transition">
                   <i data-lucide="check-circle-2" class="w-4 h-4"></i> Register Patient & Save to D1
+                </button>
+                <button type="button" onclick="handleIntakeAndPrintPdf(event)" class="px-4 py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-200 transition flex items-center gap-1.5 shadow-sm">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Register & Print PDF
                 </button>
                 <button type="button" onclick="resetIntakeForm()" class="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition flex items-center gap-1.5">
                   <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset
@@ -1136,6 +1165,7 @@
             <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Lab Accession ID:</span> <strong id="rep-patient-token" class="text-brand-600">-</strong></div>
             <div class="col-span-2"><span class="text-slate-400 block text-[10px] uppercase font-bold">Referring Doctor / Hospital:</span> <strong id="rep-patient-ref">-</strong></div>
             <div class="col-span-2"><span class="text-slate-400 block text-[10px] uppercase font-bold">Investigation Study:</span> <strong id="rep-patient-modality" class="text-indigo-900 font-bold">-</strong></div>
+            <div class="col-span-4"><span class="text-slate-400 block text-[10px] uppercase font-bold">Residential Address:</span> <strong id="rep-patient-address" class="text-slate-800">-</strong></div>
           </div>
 
           <div class="text-center py-2 border-y border-slate-200">
@@ -1904,6 +1934,11 @@
           </div>
         </div>
 
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Residential Address / City / Tehsil</label>
+          <input type="text" id="modal-address" placeholder="e.g. Yaripora, Kulgam / Anantnag" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2" />
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Modality</label>
@@ -1952,9 +1987,15 @@
           <input type="text" id="modal-indication" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2" />
         </div>
 
-        <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
-          <button type="button" onclick="closePatientModal()" class="px-4 py-2 rounded-xl bg-slate-100 font-bold text-slate-700">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold">Save Patient Record</button>
+        <div class="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
+          <button type="button" onclick="printPatientReceiptFromModal()" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-200 flex items-center gap-1.5 transition">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Print PDF Receipt</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closePatientModal()" class="px-4 py-2 rounded-xl bg-slate-100 font-bold text-slate-700">Cancel</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold">Save Patient Record</button>
+          </div>
         </div>
       </form>
     </div>
@@ -2036,6 +2077,111 @@
           <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold">Save Consultant to D1</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PRINTABLE PATIENT RECEIPT & BILLING MODAL  -->
+  <!-- ========================================== -->
+  <div id="printable-receipt-modal" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div id="printable-receipt-card" class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-4 border border-slate-200 text-slate-800">
+      
+      <!-- Receipt Action Bar (Hidden on print) -->
+      <div class="receipt-modal-actions flex items-center justify-between pb-3 border-b border-slate-100 no-print">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <i data-lucide="receipt" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">Patient Intake & Billing Receipt</h3>
+            <p class="text-[11px] text-slate-400">Print or Save as PDF</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="triggerPrintReceipt()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Print / Save PDF</span>
+          </button>
+          <button onclick="closeReceiptModal()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Receipt Body -->
+      <div id="receipt-print-content" class="space-y-4 text-xs font-sans">
+        <!-- Letterhead -->
+        <div class="text-center pb-3 border-b-2 border-slate-900 space-y-1">
+          <h2 id="rcpt-facility-name" class="text-base sm:text-lg font-black tracking-tight text-slate-950 uppercase">AL JAWAHIRA ELECTROPHYSIOLOGY</h2>
+          <p id="rcpt-facility-parent" class="text-[11px] font-semibold text-slate-600">Center For NeuroDiagnostics • Operated by SpringNexa Private Limited</p>
+          <p id="rcpt-facility-contact" class="text-[10px] text-slate-500 font-mono">Hospital Road, District Bypass • +91-7006840000</p>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-100 px-3 py-1.5 rounded-lg font-mono text-[11px]">
+          <span class="font-bold text-slate-800">PATIENT REGISTRATION & BILLING SLIP</span>
+          <span id="rcpt-token" class="font-black text-brand-700 font-mono">TOKEN #1001</span>
+        </div>
+
+        <!-- Patient Demographics Table -->
+        <table class="w-full text-xs border border-slate-200">
+          <tbody>
+            <tr class="border-b border-slate-100">
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50 w-32">Patient Name</td>
+              <td id="rcpt-name" class="py-1.5 px-2.5 font-bold text-slate-900">-</td>
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50 w-28">Study Date</td>
+              <td id="rcpt-date" class="py-1.5 px-2.5 font-mono">-</td>
+            </tr>
+            <tr class="border-b border-slate-100">
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50">Age / Gender</td>
+              <td id="rcpt-age-gender" class="py-1.5 px-2.5">-</td>
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50">Contact Phone</td>
+              <td id="rcpt-phone" class="py-1.5 px-2.5 font-mono">-</td>
+            </tr>
+            <tr class="border-b border-slate-100">
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50">Residential Address</td>
+              <td id="rcpt-address" colspan="3" class="py-1.5 px-2.5 font-semibold text-slate-800">-</td>
+            </tr>
+            <tr class="border-b border-slate-100">
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50">Referring Doctor</td>
+              <td id="rcpt-refdoc" class="py-1.5 px-2.5 font-semibold text-slate-700">-</td>
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50">Consultant</td>
+              <td id="rcpt-repdoc" class="py-1.5 px-2.5 font-semibold text-slate-900">-</td>
+            </tr>
+            <tr>
+              <td class="py-1.5 px-2.5 font-bold text-slate-500 bg-slate-50">Clinical Indication</td>
+              <td id="rcpt-indication" colspan="3" class="py-1.5 px-2.5 text-slate-600 italic">-</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Charges & Payment Box -->
+        <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/70 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-700">Diagnostic Investigation:</span>
+            <span id="rcpt-modality" class="font-extrabold text-slate-900">-</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-700">Payment Mode:</span>
+            <span id="rcpt-paymode" class="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">UPI / QR</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-sm">
+            <span class="font-black text-slate-900">Total Amount Paid:</span>
+            <span id="rcpt-fee" class="font-black font-mono text-emerald-700 text-base">₹0</span>
+          </div>
+        </div>
+
+        <!-- Receipt Footer Stamp -->
+        <div class="pt-4 flex items-end justify-between text-[10px] text-slate-500">
+          <div>
+            <p class="font-mono">Status: <span class="text-emerald-700 font-bold">PAID (Received with thanks)</span></p>
+            <p class="font-mono text-[9px] text-slate-400 mt-0.5" id="rcpt-auth-stamp">Cloudflare D1 Verified • Nexa-LMIS v5.2</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="w-32 border-b border-slate-400 pb-4"></div>
+            <p class="font-bold text-slate-700">Authorized Reception Desk</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2201,24 +2347,31 @@
       }
     }
 
-    async function pushFullLocalStateToD1() {
-      setCloudStatus('syncing', 'Pushing to D1...');
+    async function pushFullLocalStateToD1(stateToPush) {
+      setCloudStatus('syncing', 'Syncing Vault to Cloudflare D1...');
       try {
+        const payload = stateToPush || appState;
         const res = await fetch('/api/sync', {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify(appState)
+          body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.ok) {
           setCloudStatus('connected', 'Cloudflare D1 Online');
-          showToast('All local workstation records pushed to Cloudflare D1!');
-          return;
+          if (data.state) {
+            appState = data.state;
+            saveState();
+            refreshAllViews();
+          }
+          showToast(data.message || 'Workstation records securely mirrored to Cloudflare D1!', 'success');
+          return true;
         }
       } catch (err) {
         setCloudStatus('offline', 'Local Cache (Offline)');
-        showToast('Could not reach Cloudflare D1 endpoint; saved locally.', 'error');
+        showToast('Saved locally; Cloudflare D1 sync will retry when online.', 'error');
+        return false;
       }
     }
 
@@ -2878,6 +3031,8 @@
 
     function resetIntakeForm() {
       document.getElementById('form-intake').reset();
+      const addr = document.getElementById('in-address');
+      if (addr) addr.value = '';
       renderIntakeForm();
     }
 
@@ -2903,6 +3058,7 @@
         age: Number(document.getElementById('in-age').value) || 30,
         gender: document.getElementById('in-gender').value,
         phone: document.getElementById('in-phone').value.trim() || 'N/A',
+        address: document.getElementById('in-address')?.value.trim() || '',
         refDoctor: refDoctor,
         reportingDoctor: reportingDoctor,
         modality: modality,
@@ -3002,7 +3158,7 @@
           <td class="py-3 px-3 font-medium">${p.date}</td>
           <td class="py-3 px-3">
             <p class="font-bold text-slate-900">${p.name}</p>
-            <p class="text-[10px] text-slate-500">${p.age} yrs / ${p.gender} • ${p.phone}</p>
+            <p class="text-[10px] text-slate-500">${p.age} yrs / ${p.gender} • ${p.phone}${p.address ? (' • ' + p.address) : ''}</p>
           </td>
           <td class="py-3 px-3 font-semibold text-slate-700">${p.refDoctor}</td>
           <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px]">${p.modality}</span></td>
@@ -3011,6 +3167,9 @@
           <td class="py-3 px-3 text-right font-mono text-blue-700 font-semibold">₹${Number(p.refShare).toLocaleString('en-IN')}</td>
           <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">₹${Number(p.netLab).toLocaleString('en-IN')}</td>
           <td class="py-3 px-3 text-center space-x-1 whitespace-nowrap">
+            <button onclick="printPatientReceipt('${p.id}')" title="Print PDF Patient Receipt Slip" class="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] transition inline-flex items-center gap-1">
+              <i data-lucide="printer" class="w-3 h-3"></i> Slip
+            </button>
             <button onclick="viewReportForPatient('${p.id}')" class="px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-[11px] transition">Report</button>
             <button onclick="openPatientModal('${p.id}')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">Edit</button>
             <button onclick="deletePatientRecord('${p.id}')" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] transition">Del</button>
@@ -3039,6 +3198,7 @@
         document.getElementById('modal-age').value = p.age;
         document.getElementById('modal-gender').value = p.gender;
         document.getElementById('modal-phone').value = p.phone;
+        document.getElementById('modal-address').value = p.address || '';
         document.getElementById('modal-modality').value = p.modality;
         document.getElementById('modal-refdoc').value = p.refDoctor;
         if (p.reportingDoctor) document.getElementById('modal-reporting-doctor').value = p.reportingDoctor;
@@ -3056,6 +3216,7 @@
         document.getElementById('modal-age').value = '35';
         document.getElementById('modal-gender').value = 'Male';
         document.getElementById('modal-phone').value = '';
+        document.getElementById('modal-address').value = '';
         document.getElementById('modal-modality').value = 'NCV';
         document.getElementById('modal-refdoc').value = 'District Hospital Kulgam';
         modalModalityChanged();
@@ -3101,6 +3262,7 @@
         age: Number(document.getElementById('modal-age').value) || 30,
         gender: document.getElementById('modal-gender').value,
         phone: document.getElementById('modal-phone').value.trim() || 'N/A',
+        address: document.getElementById('modal-address')?.value.trim() || '',
         refDoctor: document.getElementById('modal-refdoc').value.trim() || 'Direct Self',
         reportingDoctor: document.getElementById('modal-reporting-doctor').value,
         modality: document.getElementById('modal-modality').value,
@@ -3530,6 +3692,8 @@
       document.getElementById('rep-patient-token').innerText = `#${p.token}`;
       document.getElementById('rep-patient-ref').innerText = p.refDoctor;
       document.getElementById('rep-patient-modality').innerText = `${p.modality} Study`;
+      const repAddr = document.getElementById('rep-patient-address');
+      if (repAddr) repAddr.innerText = p.address || 'Not specified';
 
       document.getElementById('rep-doc-title').innerText = p.reportTitle || "NERVE CONDUCTION STUDIES REPORT";
       document.getElementById('rep-lbl-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
@@ -4177,17 +4341,21 @@
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = async function(evt) {
         try {
           const parsed = JSON.parse(evt.target.result);
-          if (parsed.state) {
-            appState = parsed.state;
+          const stateToRestore = parsed.state || parsed;
+          if (stateToRestore && (stateToRestore.patients || stateToRestore.settings)) {
+            appState = stateToRestore;
             saveState();
             refreshAllViews();
-            pushFullLocalStateToD1();
-            showToast("Workstation vault restored successfully & synced to D1!");
+            showToast("Restoring workstation vault & syncing to Cloudflare D1...");
+            const synced = await pushFullLocalStateToD1(appState);
+            if (synced) {
+              showToast("Workstation vault restored & permanently synced to Cloudflare D1!", "success");
+            }
           } else {
-            showToast("Invalid backup file format.", "error");
+            showToast("Invalid backup file format. Missing state data.", "error");
           }
         } catch (err) {
           showToast("Error parsing JSON backup: " + err.message, "error");
@@ -4978,6 +5146,112 @@
         if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'eye');
       }
       lucide.createIcons();
+    }
+
+
+    // ==========================================
+    // PATIENT BILLING & INTAKE RECEIPT (PDF) ENGINE
+    // ==========================================
+    function populateReceiptModal(patient) {
+      if (!patient) return;
+      const st = appState.settings || {};
+      const fName = document.getElementById('rcpt-facility-name');
+      const fParent = document.getElementById('rcpt-facility-parent');
+      const fContact = document.getElementById('rcpt-facility-contact');
+
+      if (fName) fName.innerText = st.facilityName || 'AL JAWAHIRA ELECTROPHYSIOLOGY';
+      if (fParent) fParent.innerText = `Center For NeuroDiagnostics • Operated by ${st.parentEntity || 'SpringNexa Private Limited'}`;
+      if (fContact) fContact.innerText = `${st.address || 'Hospital Road, District Bypass'} • Contact: ${st.phones || '+91-7006840000'}`;
+
+      const tokenEl = document.getElementById('rcpt-token');
+      const nameEl = document.getElementById('rcpt-name');
+      const dateEl = document.getElementById('rcpt-date');
+      const ageSexEl = document.getElementById('rcpt-age-gender');
+      const phoneEl = document.getElementById('rcpt-phone');
+      const addrEl = document.getElementById('rcpt-address');
+      const refEl = document.getElementById('rcpt-refdoc');
+      const repEl = document.getElementById('rcpt-repdoc');
+      const indEl = document.getElementById('rcpt-indication');
+      const modEl = document.getElementById('rcpt-modality');
+      const payEl = document.getElementById('rcpt-paymode');
+      const feeEl = document.getElementById('rcpt-fee');
+      const stampEl = document.getElementById('rcpt-auth-stamp');
+
+      if (tokenEl) tokenEl.innerText = `TOKEN #${patient.token}`;
+      if (nameEl) nameEl.innerText = patient.name || '-';
+      if (dateEl) dateEl.innerText = patient.date || new Date().toISOString().split('T')[0];
+      if (ageSexEl) ageSexEl.innerText = `${patient.age || '-'} Yrs / ${patient.gender || '-'}`;
+      if (phoneEl) phoneEl.innerText = patient.phone || 'N/A';
+      if (addrEl) addrEl.innerText = patient.address || 'Address Not Recorded';
+      if (refEl) refEl.innerText = patient.refDoctor || 'Direct / OPD Walk-in';
+      if (repEl) repEl.innerText = patient.reportingDoctor || 'Consultant Neurologist';
+      if (indEl) indEl.innerText = patient.indication || 'Routine electrodiagnostic evaluation';
+      if (modEl) modEl.innerText = `${patient.modality} Study`;
+      if (payEl) payEl.innerText = patient.payMode || 'UPI / QR Scan';
+      if (feeEl) feeEl.innerText = `₹${Number(patient.fee || 0).toLocaleString('en-IN')}`;
+      if (stampEl) stampEl.innerText = `Cloudflare D1 Ref: ${patient.id || 'NEXA-REC'} • Verified`;
+    }
+
+    function printPatientReceipt(patientId) {
+      const p = appState.patients.find(x => x.id === patientId);
+      if (!p) {
+        showToast("Patient record not found.", "error");
+        return;
+      }
+      populateReceiptModal(p);
+      const modal = document.getElementById('printable-receipt-modal');
+      if (modal) modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function printPatientReceiptFromModal() {
+      const currentPatient = {
+        id: document.getElementById('modal-patient-id')?.value || ('P' + Date.now()),
+        token: document.getElementById('modal-token')?.value || '1001',
+        date: document.getElementById('modal-date')?.value || new Date().toISOString().split('T')[0],
+        name: document.getElementById('modal-name')?.value || 'Patient',
+        age: document.getElementById('modal-age')?.value || '35',
+        gender: document.getElementById('modal-gender')?.value || 'Female',
+        phone: document.getElementById('modal-phone')?.value || 'N/A',
+        address: document.getElementById('modal-address')?.value || '',
+        refDoctor: document.getElementById('modal-refdoc')?.value || 'Direct Self',
+        reportingDoctor: document.getElementById('modal-reporting-doctor')?.value || '',
+        modality: document.getElementById('modal-modality')?.value || 'NCV',
+        fee: document.getElementById('modal-fee')?.value || '0',
+        payMode: 'Cash / UPI',
+        indication: document.getElementById('modal-indication')?.value || ''
+      };
+      populateReceiptModal(currentPatient);
+      const modal = document.getElementById('printable-receipt-modal');
+      if (modal) modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    async function handleIntakeAndPrintPdf(event) {
+      if (event) event.preventDefault();
+      const name = document.getElementById('in-name')?.value?.trim();
+      if (!name) {
+        showToast("Please enter patient name first.", "error");
+        return;
+      }
+      await handleIntakeSubmit(event);
+      if (appState.patients && appState.patients.length > 0) {
+        printPatientReceipt(appState.patients[0].id);
+      }
+    }
+
+    function triggerPrintReceipt() {
+      document.body.classList.add('printing-receipt');
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('printing-receipt');
+      }, 1000);
+    }
+
+    function closeReceiptModal() {
+      const modal = document.getElementById('printable-receipt-modal');
+      if (modal) modal.classList.add('hidden');
+      document.body.classList.remove('printing-receipt');
     }
 
     // Initialize application on load
