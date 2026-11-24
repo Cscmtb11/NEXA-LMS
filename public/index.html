@@ -1023,11 +1023,14 @@
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-6 border-b border-slate-100">
             <div>
-              <h2 class="text-base font-bold text-slate-900">Structured NCS Report Writer & Findings Editor</h2>
-              <p class="text-xs text-slate-500">Select a patient, load pre-loaded clinical templates, and save findings for official printing</p>
+              <h2 class="text-base font-bold text-slate-900">Structured Clinical Report Writer & Findings Editor</h2>
+              <p class="text-xs text-slate-500">Select a patient, apply concern clinical template for the study modality, and save findings for official printing</p>
             </div>
-            <div class="flex items-center gap-3">
-              <select id="writer-patient-select" onchange="loadPatientIntoWriter(this.value)" class="bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-brand-700 focus:outline-none"></select>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="writer-patient-select" onchange="loadPatientIntoWriter(this.value)" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-brand-700 focus:outline-none"></select>
+              <button type="button" onclick="applyConcernTemplateToCurrentPatient()" title="Automatically load and apply the concerned template for this patient's registered modality" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Apply Concern Template
+              </button>
               <button onclick="switchTab('report')" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview Report
               </button>
@@ -1215,6 +1218,9 @@
             <select id="report-patient-dropdown" onchange="handleReportPatientChange(this.value)" class="bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-brand-700 focus:outline-none"></select>
           </div>
           <div class="flex items-center gap-2">
+            <button onclick="applyConcernTemplateInPreview(appState.selectedPatientForReport)" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs transition flex items-center gap-1.5" title="Re-apply the concern template for this patient's modality">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Apply Concern Template
+            </button>
             <button onclick="editReportForPatient(appState.selectedPatientForReport)" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition flex items-center gap-1.5">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Findings
             </button>
@@ -3703,6 +3709,33 @@
       }
     };
 
+    function getConcernTemplateKeyForPatient(p) {
+      if (!p) return 'normal';
+      if (p.templatePreset && MODALITY_TEMPLATES[p.templatePreset]) {
+        return p.templatePreset;
+      }
+      const mod = String(p.modality || '').toUpperCase();
+      const title = String(p.reportTitle || '').toUpperCase();
+
+      if (mod === 'EEG' || title.includes('EEG')) return 'eeg_normal';
+      if (mod === 'EMG' || title.includes('EMG')) return 'emg_normal';
+      if (mod === 'RNST' || title.includes('RNST')) return 'rnst_normal';
+      if (mod === 'VEP' || title.includes('VEP')) return 'vep_normal';
+      if (mod === 'BERA' || title.includes('BERA')) return 'bera_normal';
+      if (mod === 'URINE_RM' || title.includes('URINE')) return 'urine_rm_normal';
+      if (mod === 'STOOL_RE' || title.includes('STOOL')) return 'stool_re_normal';
+      if (mod === 'SEMEN_ANALYSIS' || title.includes('SEMEN')) return 'semen_normal';
+      if (mod === 'BODY_FLUID' || title.includes('FLUID')) return 'urine_rm_normal';
+      if (mod === 'CBC' || mod === 'PBS' || mod === 'BG_RH' || mod === 'ESR' || title.includes('CBC') || title.includes('BLOOD COUNT') || title.includes('HEMATOLOGY')) return 'cbc_normal';
+      if (mod === 'COAG_PROFILE' || mod === 'BT_CT' || title.includes('COAG') || title.includes('PROTHROMBIN')) return 'coag_normal';
+      if (mod === 'LFT' || title.includes('LIVER') || title.includes('LFT')) return 'lft_normal';
+      if (mod === 'KFT' || mod === 'ELECTROLYTES' || title.includes('KIDNEY') || title.includes('KFT') || title.includes('RFT')) return 'kft_normal';
+      if (mod === 'LIPID' || title.includes('LIPID')) return 'lipid_normal';
+      if (mod === 'BLOOD_SUGAR' || mod === 'HBA1C' || title.includes('SUGAR') || title.includes('GLUCOSE') || title.includes('HBA1C') || title.includes('DIABETIC')) return 'diabetic_normal';
+      if (mod === 'THYROID_PROFILE' || title.includes('THYROID') || title.includes('TFT')) return 'thyroid_normal';
+      return 'normal';
+    }
+
     function handleModalityOrRefChange() {
       const modality = document.getElementById('in-modality').value;
       const tariff = appState.tariffs[modality] || { fee: 2500, docShare: 1000, refShare: 300 };
@@ -3710,22 +3743,12 @@
 
       const presetSelect = document.getElementById('in-template-preset');
       if (presetSelect) {
-        if (modality === 'EEG') presetSelect.value = 'eeg_normal';
-        else if (modality === 'EMG') presetSelect.value = 'emg_normal';
-        else if (modality === 'RNST') presetSelect.value = 'rnst_normal';
-        else if (modality === 'VEP') presetSelect.value = 'vep_normal';
-        else if (modality === 'BERA') presetSelect.value = 'bera_normal';
-        else if (modality === 'URINE_RM') presetSelect.value = 'urine_rm_normal';
-        else if (modality === 'STOOL_RE') presetSelect.value = 'stool_re_normal';
-        else if (modality === 'SEMEN_ANALYSIS') presetSelect.value = 'semen_normal';
-        else if (modality === 'CBC' || modality === 'PBS') presetSelect.value = 'cbc_normal';
-        else if (modality === 'COAG_PROFILE' || modality === 'BT_CT') presetSelect.value = 'coag_normal';
-        else if (modality === 'LFT') presetSelect.value = 'lft_normal';
-        else if (modality === 'KFT') presetSelect.value = 'kft_normal';
-        else if (modality === 'LIPID') presetSelect.value = 'lipid_normal';
-        else if (modality === 'BLOOD_SUGAR' || modality === 'HBA1C') presetSelect.value = 'diabetic_normal';
-        else if (modality === 'THYROID_PROFILE') presetSelect.value = 'thyroid_normal';
-        else presetSelect.value = 'normal';
+        const concern = getConcernTemplateKeyForPatient({ modality });
+        if (presetSelect.querySelector(`option[value="${concern}"]`)) {
+          presetSelect.value = concern;
+        } else {
+          presetSelect.value = 'normal';
+        }
       }
 
       let tierMultiplier = 1.0;
@@ -3808,7 +3831,8 @@
       const reportingDoctor = document.getElementById('in-reporting-doctor').value;
       const refDoctor = document.getElementById('in-refdoc').value.trim() || 'Direct Self';
 
-      const tpl = MODALITY_TEMPLATES[preset] || MODALITY_TEMPLATES.normal;
+      const concernKey = (preset && MODALITY_TEMPLATES[preset]) ? preset : getConcernTemplateKeyForPatient({ modality });
+      const tpl = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
 
       const newPatient = {
         id: 'P' + Date.now(),
@@ -3823,6 +3847,7 @@
         refDoctor: refDoctor,
         reportingDoctor: reportingDoctor,
         modality: modality,
+        templatePreset: concernKey,
         fee: fee,
         docShare: docShare,
         refShare: refShare,
@@ -3830,18 +3855,28 @@
         payMode: document.getElementById('in-paymode').value,
         indication: document.getElementById('in-indication').value.trim() || 'Standard diagnostic study',
         reportTitle: tpl.reportTitle,
-        lblParam1: tpl.lblParam1,
-        lblParam2: tpl.lblParam2,
-        lblSec1: tpl.lblSec1,
-        lblSec2: tpl.lblSec2,
-        lblSec3: tpl.lblSec3,
-        motorSampled: tpl.motorSampled,
-        sensorySampled: tpl.sensorySampled,
-        motorFindings: tpl.motorFindings,
-        sensoryFindings: tpl.sensoryFindings,
-        fwavesFindings: tpl.fwavesFindings,
-        impression: tpl.impression
+        impression: tpl.impression || 'Findings within normal limits.'
       };
+
+      if (tpl.isLab) {
+        newPatient.isLab = true;
+        newPatient.labCategory = tpl.labCategory || '';
+        newPatient.labMethod = tpl.labMethod || '';
+        newPatient.labResults = JSON.parse(JSON.stringify(tpl.labParams || []));
+        newPatient.labNotes = tpl.notes || '';
+      } else {
+        newPatient.isLab = false;
+        newPatient.lblParam1 = tpl.lblParam1 || (modality === 'EEG' ? 'Technique & Provocative Procedures:' : 'Motor Nerves Sampled:');
+        newPatient.lblParam2 = tpl.lblParam2 || (modality === 'EEG' ? 'Reactivity & State:' : 'Sensory Nerves Sampled:');
+        newPatient.lblSec1 = tpl.lblSec1 || (modality === 'EEG' ? 'BACKGROUND ACTIVITY:' : 'MOTOR FINDINGS (DML, CMAP, CV):');
+        newPatient.lblSec2 = tpl.lblSec2 || (modality === 'EEG' ? 'REACTIVITY & ARTEFACTS:' : 'SENSORY FINDINGS (Latency, Amplitude, CV):');
+        newPatient.lblSec3 = tpl.lblSec3 || (modality === 'EEG' ? 'EPILEPTIFORM / ABNORMAL DISCHARGES:' : 'F-WAVES:');
+        newPatient.motorSampled = tpl.motorSampled || '';
+        newPatient.sensorySampled = tpl.sensorySampled || '';
+        newPatient.motorFindings = tpl.motorFindings || '';
+        newPatient.sensoryFindings = tpl.sensoryFindings || '';
+        newPatient.fwavesFindings = tpl.fwavesFindings || '';
+      }
 
       appState.patients.unshift(newPatient);
 
@@ -4039,12 +4074,67 @@
       if (id) {
         const p = appState.patients.find(x => x.id === id);
         if (p) {
+          const modChanged = (p.modality !== data.modality);
           Object.assign(p, data);
+          if (modChanged || (!p.motorFindings && !p.labResults)) {
+            const concernKey = getConcernTemplateKeyForPatient(p);
+            const tpl = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+            p.templatePreset = concernKey;
+            p.reportTitle = tpl.reportTitle;
+            p.impression = tpl.impression || 'Findings within normal limits.';
+            if (tpl.isLab) {
+              p.isLab = true;
+              p.labCategory = tpl.labCategory || '';
+              p.labMethod = tpl.labMethod || '';
+              p.labResults = JSON.parse(JSON.stringify(tpl.labParams || []));
+              p.labNotes = tpl.notes || '';
+            } else {
+              p.isLab = false;
+              p.lblParam1 = tpl.lblParam1 || '';
+              p.lblParam2 = tpl.lblParam2 || '';
+              p.lblSec1 = tpl.lblSec1 || '';
+              p.lblSec2 = tpl.lblSec2 || '';
+              p.lblSec3 = tpl.lblSec3 || '';
+              p.motorSampled = tpl.motorSampled || '';
+              p.sensorySampled = tpl.sensorySampled || '';
+              p.motorFindings = tpl.motorFindings || '';
+              p.sensoryFindings = tpl.sensoryFindings || '';
+              p.fwavesFindings = tpl.fwavesFindings || '';
+            }
+          }
           targetRecord = p;
           showToast(`Patient ${p.name} updated!`);
         }
       } else {
-        const newP = { id: 'P' + Date.now(), ...data, payMode: 'UPI / QR', reportTitle: 'NERVE CONDUCTION STUDIES REPORT', motorSampled: 'Bilateral Median and Ulnar nerves.', sensorySampled: 'Bilateral Median and Ulnar nerves.', motorFindings: 'Normal DML, CMAP and CV.', sensoryFindings: 'Normal Latency, Amplitude and CV.', fwavesFindings: 'Normal minimum Latencies.', impression: 'EPS of sampled nerves is Within Normal Limits.' };
+        const concernKey = getConcernTemplateKeyForPatient({ modality: data.modality });
+        const tpl = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+        const newP = {
+          id: 'P' + Date.now(),
+          ...data,
+          payMode: 'UPI / QR',
+          templatePreset: concernKey,
+          reportTitle: tpl.reportTitle,
+          impression: tpl.impression || 'Findings within normal limits.'
+        };
+        if (tpl.isLab) {
+          newP.isLab = true;
+          newP.labCategory = tpl.labCategory || '';
+          newP.labMethod = tpl.labMethod || '';
+          newP.labResults = JSON.parse(JSON.stringify(tpl.labParams || []));
+          newP.labNotes = tpl.notes || '';
+        } else {
+          newP.isLab = false;
+          newP.lblParam1 = tpl.lblParam1 || '';
+          newP.lblParam2 = tpl.lblParam2 || '';
+          newP.lblSec1 = tpl.lblSec1 || '';
+          newP.lblSec2 = tpl.lblSec2 || '';
+          newP.lblSec3 = tpl.lblSec3 || '';
+          newP.motorSampled = tpl.motorSampled || '';
+          newP.sensorySampled = tpl.sensorySampled || '';
+          newP.motorFindings = tpl.motorFindings || '';
+          newP.sensoryFindings = tpl.sensoryFindings || '';
+          newP.fwavesFindings = tpl.fwavesFindings || '';
+        }
         appState.patients.unshift(newP);
         targetRecord = newP;
         showToast(`Patient ${newP.name} added!`);
@@ -4423,12 +4513,75 @@
       if (selectedValue) selectElement.value = selectedValue;
     }
 
-    function loadPatientIntoWriter(id) {
+    function applyConcernTemplateToCurrentPatient() {
+      const p = appState.patients.find(x => x.id === appState.selectedPatientForReport);
+      if (!p) return showToast("Please select an active patient first!", "error");
+      const concernKey = getConcernTemplateKeyForPatient(p);
+      loadNcsTemplate(concernKey);
+      const tpl = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+      showToast(`Concern template '${tpl.reportTitle}' applied!`);
+    }
+
+    function applyConcernTemplateInPreview(id) {
+      const p = appState.patients.find(x => x.id === id);
+      if (!p) return showToast("Please select a patient first!", "error");
+      const concernKey = getConcernTemplateKeyForPatient(p);
+      const tpl = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+
+      p.isLab = !!tpl.isLab;
+      p.templatePreset = concernKey;
+      p.reportTitle = tpl.reportTitle;
+      p.impression = tpl.impression || 'Findings within normal limits.';
+      if (tpl.isLab) {
+        p.labMethod = tpl.labMethod || '';
+        p.labCategory = tpl.labCategory || '';
+        p.labResults = JSON.parse(JSON.stringify(tpl.labParams || []));
+        p.labNotes = tpl.notes || '';
+      } else {
+        p.lblParam1 = tpl.lblParam1 || '';
+        p.lblParam2 = tpl.lblParam2 || '';
+        p.lblSec1 = tpl.lblSec1 || '';
+        p.lblSec2 = tpl.lblSec2 || '';
+        p.lblSec3 = tpl.lblSec3 || '';
+        p.motorSampled = tpl.motorSampled || '';
+        p.sensorySampled = tpl.sensorySampled || '';
+        p.motorFindings = tpl.motorFindings || '';
+        p.sensoryFindings = tpl.sensoryFindings || '';
+        p.fwavesFindings = tpl.fwavesFindings || '';
+      }
+
+      saveState();
+      populateReportPreviewModal(id);
+      showToast(`Concern template '${tpl.reportTitle}' applied!`);
+
+      fetch('/api/patients', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(p)
+      }).catch(err => setCloudStatus('offline'));
+    }
+
+    function loadPatientIntoWriter(id, forceConcern = false) {
       const p = appState.patients.find(x => x.id === id);
       if (!p) return;
       appState.selectedPatientForReport = id;
 
       updateWriterPresetsVisibility();
+
+      const concernKey = getConcernTemplateKeyForPatient(p);
+      const tplConcern = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+
+      const isLabPatient = (tplConcern.isLab || ['URINE_RM', 'STOOL_RE', 'SEMEN_ANALYSIS', 'BODY_FLUID', 'CBC', 'PBS', 'BG_RH', 'BT_CT', 'COAG_PROFILE', 'ESR', 'LFT', 'KFT', 'LIPID', 'BLOOD_SUGAR', 'HBA1C', 'THYROID_PROFILE', 'ELECTROLYTES'].includes(p.modality));
+      const isEegPatient = (!isLabPatient && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
+
+      const isUninitializedLab = isLabPatient && (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0);
+      const isUninitializedEeg = isEegPatient && (p.motorFindings === 'Normal DML, CMAP and CV.' || p.motorSampled === 'Bilateral Median and Ulnar nerves.' || !p.motorFindings);
+      const hasNoFindings = !p.motorFindings && !p.labResults && !p.impression;
+
+      if (forceConcern || isUninitializedLab || isUninitializedEeg || hasNoFindings) {
+        loadNcsTemplate(concernKey);
+        return;
+      }
 
       document.getElementById('writer-title').value = p.reportTitle || (p.modality === 'EEG' ? 'EEG REPORT' : (p.isLab ? (p.modality + ' REPORT') : 'NERVE CONDUCTION STUDIES REPORT'));
       if (document.getElementById('writer-technician')) document.getElementById('writer-technician').value = p.technician || 'Mr Murtaza Amin';
@@ -4448,19 +4601,27 @@
         if (neuroBox) neuroBox.style.display = 'block';
         if (labBox) labBox.style.display = 'none';
 
-        document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
-        document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
-        document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
-        document.getElementById('lbl-writer-sec2').innerText = p.lblSec2 || "SENSORY FINDINGS (Latency, Amplitude, CV):";
-        document.getElementById('lbl-writer-sec3').innerText = p.lblSec3 || "F-WAVES:";
+        if (isEegPatient) {
+          document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Technique & Provocative Procedures:";
+          document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Reactivity & State:";
+          document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "BACKGROUND ACTIVITY:";
+          document.getElementById('lbl-writer-sec2').innerText = p.lblSec2 || "REACTIVITY & ARTEFACTS:";
+          document.getElementById('lbl-writer-sec3').innerText = p.lblSec3 || "EPILEPTIFORM / ABNORMAL DISCHARGES:";
+        } else {
+          document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
+          document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
+          document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
+          document.getElementById('lbl-writer-sec2').innerText = p.lblSec2 || "SENSORY FINDINGS (Latency, Amplitude, CV):";
+          document.getElementById('lbl-writer-sec3').innerText = p.lblSec3 || "F-WAVES:";
+        }
 
-        document.getElementById('writer-motor-sampled').value = p.motorSampled || "Bilateral Median and Ulnar nerves.";
-        document.getElementById('writer-sensory-sampled').value = p.sensorySampled || "Bilateral Median and Ulnar nerves.";
-        document.getElementById('writer-motor-findings').value = p.motorFindings || "Normal DML, CMAP and CV.";
-        document.getElementById('writer-sensory-findings').value = p.sensoryFindings || "Normal Latency, Amplitude and CV.";
-        document.getElementById('writer-fwaves-findings').value = p.fwavesFindings || "Normal minimum Latencies.";
+        document.getElementById('writer-motor-sampled').value = p.motorSampled || (isEegPatient ? "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures" : "Bilateral Median and Ulnar nerves.");
+        document.getElementById('writer-sensory-sampled').value = p.sensorySampled || (isEegPatient ? "Reactivity. +" : "Bilateral Median and Ulnar nerves.");
+        document.getElementById('writer-motor-findings').value = p.motorFindings || (isEegPatient ? "Background: slow background with sleep markers like vertex waves and sleep spindles. In later part there is hypnagogic hyper synchrony followed by brief alpha background." : "Normal DML, CMAP and CV.");
+        document.getElementById('writer-sensory-findings').value = p.sensoryFindings || (isEegPatient ? "Artefacts +.     \n No abnormal Epileptiform discharges seen." : "Normal Latency, Amplitude and CV.");
+        document.getElementById('writer-fwaves-findings').value = p.fwavesFindings || (isEegPatient ? "No abnormal epileptiform discharges seen." : "Normal minimum Latencies.");
       }
-      document.getElementById('writer-impression').value = p.impression || "Findings within normal limits.";
+      document.getElementById('writer-impression').value = p.impression || (isEegPatient ? "Normal Sleep and awake EEG Record" : "Findings within normal limits.");
     }
 
     function loadNcsTemplate(type) {
@@ -4507,17 +4668,25 @@
 
       if (p) {
         p.isLab = !!tpl.isLab;
-        p.labMethod = tpl.labMethod || '';
-        p.labCategory = tpl.labCategory || '';
+        p.templatePreset = type;
+        p.reportTitle = tpl.reportTitle;
+        p.impression = tpl.impression || '';
         if (tpl.isLab) {
+          p.labMethod = tpl.labMethod || '';
+          p.labCategory = tpl.labCategory || '';
           p.labResults = JSON.parse(JSON.stringify(tpl.labParams || []));
           p.labNotes = tpl.notes || '';
         } else {
-          p.lblParam1 = tpl.lblParam1;
-          p.lblParam2 = tpl.lblParam2;
-          p.lblSec1 = tpl.lblSec1;
-          p.lblSec2 = tpl.lblSec2;
-          p.lblSec3 = tpl.lblSec3;
+          p.lblParam1 = tpl.lblParam1 || '';
+          p.lblParam2 = tpl.lblParam2 || '';
+          p.lblSec1 = tpl.lblSec1 || '';
+          p.lblSec2 = tpl.lblSec2 || '';
+          p.lblSec3 = tpl.lblSec3 || '';
+          p.motorSampled = tpl.motorSampled || '';
+          p.sensorySampled = tpl.sensorySampled || '';
+          p.motorFindings = tpl.motorFindings || '';
+          p.sensoryFindings = tpl.sensoryFindings || '';
+          p.fwavesFindings = tpl.fwavesFindings || '';
         }
       }
 
@@ -4649,6 +4818,37 @@
       if (document.getElementById('rep-patient-reported-by')) document.getElementById('rep-patient-reported-by').innerText = p.reportingDoctor || activeDoc.name;
       if (document.getElementById('rep-patient-address')) document.getElementById('rep-patient-address').innerText = p.address || 'Okay Kulgam';
       if (document.getElementById('rep-patient-technician')) document.getElementById('rep-patient-technician').innerText = p.technician || 'Mr Murtaza Amin';
+
+      const concernKey = getConcernTemplateKeyForPatient(p);
+      const tplConcern = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+
+      const isLabPatient = (tplConcern?.isLab || ['URINE_RM', 'STOOL_RE', 'SEMEN_ANALYSIS', 'BODY_FLUID', 'CBC', 'PBS', 'BG_RH', 'BT_CT', 'COAG_PROFILE', 'ESR', 'LFT', 'KFT', 'LIPID', 'BLOOD_SUGAR', 'HBA1C', 'THYROID_PROFILE', 'ELECTROLYTES'].includes(p.modality));
+      const isEegPatient = (!isLabPatient && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
+
+      // Auto-heal uninitialized records when previewing
+      if (isLabPatient && (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0)) {
+        p.isLab = true;
+        p.labMethod = tplConcern.labMethod || '';
+        p.labCategory = tplConcern.labCategory || '';
+        p.labResults = JSON.parse(JSON.stringify(tplConcern.labParams || []));
+        p.labNotes = tplConcern.notes || '';
+        p.reportTitle = tplConcern.reportTitle;
+        p.impression = p.impression || tplConcern.impression || '';
+      } else if (isEegPatient && (p.motorFindings === 'Normal DML, CMAP and CV.' || p.motorSampled === 'Bilateral Median and Ulnar nerves.' || !p.motorFindings)) {
+        p.isLab = false;
+        p.reportTitle = tplConcern.reportTitle;
+        p.lblParam1 = tplConcern.lblParam1;
+        p.lblParam2 = tplConcern.lblParam2;
+        p.lblSec1 = tplConcern.lblSec1;
+        p.lblSec2 = tplConcern.lblSec2;
+        p.lblSec3 = tplConcern.lblSec3;
+        p.motorSampled = tplConcern.motorSampled;
+        p.sensorySampled = tplConcern.sensorySampled;
+        p.motorFindings = tplConcern.motorFindings;
+        p.sensoryFindings = tplConcern.sensoryFindings;
+        p.fwavesFindings = tplConcern.fwavesFindings;
+        p.impression = p.impression || tplConcern.impression;
+      }
 
       const isLab = !!p.isLab || (Array.isArray(p.labResults) && p.labResults.length > 0);
       const isEeg = (!isLab && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
