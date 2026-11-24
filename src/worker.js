@@ -223,6 +223,7 @@ async function ensureD1Schema(db) {
   try { await db.prepare("ALTER TABLE expenses ADD COLUMN updated_at TEXT").run(); } catch (_) {}
   try { await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_tariffs_tenant_code ON tariffs (tenant_id, code)").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE facility_settings ADD COLUMN cea_reg_no TEXT").run(); } catch (_) {}
+  try { await db.prepare("ALTER TABLE patients ADD COLUMN technician TEXT").run(); } catch (_) {}
 
   // Ensure default primary tenant
   const now = new Date().toISOString();
@@ -384,6 +385,7 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
     gender: p.gender,
     phone: p.phone,
     address: p.address || '',
+    technician: p.technician || 'Mr Murtaza Amin',
     refDoctor: p.ref_doctor,
     reportingDoctor: p.reporting_doctor,
     modality: p.modality,
@@ -1098,15 +1100,15 @@ export default {
             const pid = p.id || ('P' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
             stmts.push(env.DB.prepare(`
               INSERT INTO patients (
-                id, tenant_id, token, date, name, age, gender, phone, address, ref_doctor, reporting_doctor,
+                id, tenant_id, token, date, name, age, gender, phone, address, technician, ref_doctor, reporting_doctor,
                 modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
                 report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
                 motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
                 created_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 token=excluded.token, date=excluded.date, name=excluded.name, age=excluded.age,
-                gender=excluded.gender, phone=excluded.phone, address=excluded.address, ref_doctor=excluded.ref_doctor,
+                gender=excluded.gender, phone=excluded.phone, address=excluded.address, technician=excluded.technician, ref_doctor=excluded.ref_doctor,
                 reporting_doctor=excluded.reporting_doctor, modality=excluded.modality,
                 fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share,
                 net_lab=excluded.net_lab, pay_mode=excluded.pay_mode, indication=excluded.indication,
@@ -1118,7 +1120,7 @@ export default {
             `).bind(
               pid, tenantId, String(p.token || '0'), String(p.date || now.split('T')[0]), String(p.name || 'Unnamed Patient'),
               Number(p.age) || 0, String(p.gender || 'Other'), String(p.phone || ''),
-              String(p.address || ''), String(p.refDoctor || 'Self'), String(p.reportingDoctor || ''), String(p.modality || 'NCV'),
+              String(p.address || ''), String(p.technician || 'Mr Murtaza Amin'), String(p.refDoctor || 'Self'), String(p.reportingDoctor || ''), String(p.modality || 'NCV'),
               Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
               String(p.payMode || 'UPI / QR'), String(p.indication || ''), String(p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT'),
               String(p.lblParam1 || ''), String(p.lblParam2 || ''), String(p.lblSec1 || ''), String(p.lblSec2 || ''), String(p.lblSec3 || ''),
@@ -1210,15 +1212,15 @@ export default {
 
         await env.DB.prepare(`
           INSERT INTO patients (
-            id, tenant_id, token, date, name, age, gender, phone, address, ref_doctor, reporting_doctor,
+            id, tenant_id, token, date, name, age, gender, phone, address, technician, ref_doctor, reporting_doctor,
             modality, fee, doc_share, ref_share, net_lab, pay_mode, indication,
             report_title, lbl_param1, lbl_param2, lbl_sec1, lbl_sec2, lbl_sec3,
             motor_sampled, sensory_sampled, motor_findings, sensory_findings, fwaves_findings, impression,
             created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             token=excluded.token, date=excluded.date, name=excluded.name, age=excluded.age,
-            gender=excluded.gender, phone=excluded.phone, address=excluded.address, ref_doctor=excluded.ref_doctor,
+            gender=excluded.gender, phone=excluded.phone, address=excluded.address, technician=excluded.technician, ref_doctor=excluded.ref_doctor,
             reporting_doctor=excluded.reporting_doctor, modality=excluded.modality,
             fee=excluded.fee, doc_share=excluded.doc_share, ref_share=excluded.ref_share,
             net_lab=excluded.net_lab, pay_mode=excluded.pay_mode, indication=excluded.indication,
@@ -1230,7 +1232,7 @@ export default {
         `).bind(
           id, tenantId, String(p.token || '0'), String(p.date || now.split('T')[0]), String(p.name || 'Unnamed Patient'),
           Number(p.age) || 0, String(p.gender || 'Other'), String(p.phone || ''),
-          String(p.address || ''), String(p.refDoctor || 'Self'), String(p.reportingDoctor || ''), String(p.modality || 'NCV'),
+          String(p.address || ''), String(p.technician || 'Mr Murtaza Amin'), String(p.refDoctor || 'Self'), String(p.reportingDoctor || ''), String(p.modality || 'NCV'),
           Number(p.fee) || 0, Number(p.docShare) || 0, Number(p.refShare) || 0, Number(p.netLab) || 0,
           String(p.payMode || 'UPI / QR'), String(p.indication || ''), String(p.reportTitle || 'NERVE CONDUCTION STUDIES REPORT'),
           String(p.lblParam1 || ''), String(p.lblParam2 || ''), String(p.lblSec1 || ''), String(p.lblSec2 || ''), String(p.lblSec3 || ''),

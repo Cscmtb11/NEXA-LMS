@@ -677,13 +677,17 @@
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div class="sm:col-span-5">
+                <div class="sm:col-span-4">
                   <label class="block font-bold text-slate-700 mb-1">Contact Mobile Number</label>
                   <input type="tel" id="in-phone" placeholder="10-digit mobile number" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
                 </div>
-                <div class="sm:col-span-7">
-                  <label class="block font-bold text-slate-700 mb-1">Residential Address / City / Tehsil</label>
-                  <input type="text" id="in-address" placeholder="e.g. Yaripora, Kulgam / Anantnag" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
+                <div class="sm:col-span-4">
+                  <label class="block font-bold text-slate-700 mb-1">Residential Address</label>
+                  <input type="text" id="in-address" placeholder="e.g. Okay, Kulgam / Anantnag" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
+                </div>
+                <div class="sm:col-span-4">
+                  <label class="block font-bold text-slate-700 mb-1">Clinical Technician</label>
+                  <input type="text" id="in-technician" value="Mr Murtaza Amin" placeholder="e.g. Mr Murtaza Amin" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none" />
                 </div>
               </div>
 
@@ -1036,7 +1040,8 @@
               <button type="button" onclick="loadNcsTemplate('normal')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">✓ NCS Normal</button>
               <button type="button" onclick="loadNcsTemplate('ulnar')" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition">⚡ Left Ulnar Neuropathy</button>
               <button type="button" onclick="loadNcsTemplate('cts')" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition">⚡ Bilateral CTS</button>
-              <button type="button" onclick="loadNcsTemplate('eeg_normal')" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition">🧠 EEG Normal</button>
+              <button type="button" onclick="loadNcsTemplate('eeg_normal')" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition">🧠 Video EEG Normal</button>
+              <button type="button" onclick="loadNcsTemplate('eeg_abnormal')" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition">⚠️ Video EEG Abnormal</button>
               <button type="button" onclick="loadNcsTemplate('emg_normal')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition">💪 EMG Normal</button>
               <button type="button" onclick="loadNcsTemplate('rnst_normal')" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition">🔌 RNST Normal</button>
               <button type="button" onclick="loadNcsTemplate('vep_normal')" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition">👁️ VEP Normal</button>
@@ -1045,9 +1050,15 @@
           </div>
 
           <form id="form-report-writer" onsubmit="handleSaveReportWriter(event)" class="space-y-4 text-xs">
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Report Heading Title</label>
-              <input type="text" id="writer-title" required class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-bold uppercase" />
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div class="sm:col-span-8">
+                <label class="block font-bold text-slate-700 mb-1">Report Heading Title</label>
+                <input type="text" id="writer-title" required class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-bold uppercase" />
+              </div>
+              <div class="sm:col-span-4">
+                <label class="block font-bold text-slate-700 mb-1">Clinical Technician</label>
+                <input type="text" id="writer-technician" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium" />
+              </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1158,65 +1169,132 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-            <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Patient Name:</span> <strong id="rep-patient-name" class="text-slate-900 text-sm">-</strong></div>
-            <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Age / Gender:</span> <strong id="rep-patient-age-sex">-</strong></div>
-            <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Study Date:</span> <strong id="rep-patient-date">-</strong></div>
-            <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Lab Accession ID:</span> <strong id="rep-patient-token" class="text-brand-600">-</strong></div>
-            <div class="col-span-2"><span class="text-slate-400 block text-[10px] uppercase font-bold">Referring Doctor / Hospital:</span> <strong id="rep-patient-ref">-</strong></div>
-            <div class="col-span-2"><span class="text-slate-400 block text-[10px] uppercase font-bold">Investigation Study:</span> <strong id="rep-patient-modality" class="text-indigo-900 font-bold">-</strong></div>
-            <div class="col-span-4"><span class="text-slate-400 block text-[10px] uppercase font-bold">Residential Address:</span> <strong id="rep-patient-address" class="text-slate-800">-</strong></div>
+          <!-- OFFICIAL PATIENT INFORMATION TABLE (Docx Standard) -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border border-slate-900 mb-4" style="border-collapse: collapse;">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-900">
+                  <th colspan="2" class="border border-slate-900 px-3 py-1.5 text-left font-black tracking-wide uppercase text-slate-950">PATIENT INFORMATION</th>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase text-slate-800 w-[18%]">DATE</th>
+                  <td id="rep-patient-date" class="border border-slate-900 px-3 py-1.5 text-left font-bold text-slate-950 w-[32%]">-</td>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800 w-[18%]">ID</th>
+                  <td id="rep-patient-token" class="border border-slate-900 px-3 py-1.5 text-left font-black text-brand-700 w-[32%]">-</td>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800 w-[18%]">REF.NO.</th>
+                  <td id="rep-patient-refno" class="border border-slate-900 px-3 py-1.5 text-left font-mono font-medium text-slate-900 w-[32%]">-</td>
+                </tr>
+                <tr>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800">NAME</th>
+                  <td id="rep-patient-name" class="border border-slate-900 px-3 py-1.5 text-left font-black uppercase text-slate-950">-</td>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800">REF.BY</th>
+                  <td id="rep-patient-ref" class="border border-slate-900 px-3 py-1.5 text-left font-medium text-slate-900">-</td>
+                </tr>
+                <tr>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800">AGE / SEX</th>
+                  <td id="rep-patient-age-sex" class="border border-slate-900 px-3 py-1.5 text-left font-medium text-slate-900">-</td>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800">REPORTED BY</th>
+                  <td id="rep-patient-reported-by" class="border border-slate-900 px-3 py-1.5 text-left font-bold text-slate-950">-</td>
+                </tr>
+                <tr>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800">ADDRESS</th>
+                  <td id="rep-patient-address" class="border border-slate-900 px-3 py-1.5 text-left font-medium text-slate-900">-</td>
+                  <th class="border border-slate-900 px-3 py-1.5 text-left font-bold uppercase bg-slate-50 text-slate-800">TECHNICIAN</th>
+                  <td id="rep-patient-technician" class="border border-slate-900 px-3 py-1.5 text-left font-medium text-slate-900">Mr Murtaza Amin</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <div class="text-center py-2 border-y border-slate-200">
-            <h3 id="rep-doc-title" class="font-black text-sm tracking-widest text-slate-900 uppercase">NERVE CONDUCTION STUDIES REPORT</h3>
-          </div>
-
-          <div class="space-y-4 text-xs">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-              <div><span id="rep-lbl-param1" class="font-bold text-slate-700">Motor Nerves Sampled:</span> <span id="rep-motor-sampled" class="font-medium text-slate-900 block mt-0.5">Bilateral Median and Ulnar nerves.</span></div>
-              <div><span id="rep-lbl-param2" class="font-bold text-slate-700">Sensory Nerves Sampled:</span> <span id="rep-sensory-sampled" class="font-medium text-slate-900 block mt-0.5">Bilateral Median and Ulnar nerves.</span></div>
+          <!-- EEG REPORT CONTENT CONTAINER -->
+          <div id="rep-eeg-container" class="space-y-4 text-xs">
+            <div class="text-center py-2 border-y-2 border-slate-900 my-2">
+              <h3 id="rep-eeg-doc-title" class="font-black text-sm tracking-widest text-slate-950 uppercase">EEG REPORT</h3>
             </div>
 
-            <div class="space-y-3">
-              <div class="p-3.5 rounded-xl border border-slate-200">
-                <h4 id="rep-lbl-sec1" class="font-bold text-slate-800 uppercase text-[11px] mb-1">MOTOR FINDINGS (DML, CMAP, CV):</h4>
-                <p id="rep-motor-findings" class="font-mono text-slate-800 whitespace-pre-line">Normal DML, CMAP and CV.</p>
-              </div>
+            <p id="rep-eeg-protocol" class="text-center text-xs text-slate-800 font-medium px-4 leading-relaxed">
+              Video EEG Record Done using 10-20 International system of electrode placement IPs &amp; HV used as provocative procedures
+            </p>
 
-              <div class="p-3.5 rounded-xl border border-slate-200">
-                <h4 id="rep-lbl-sec2" class="font-bold text-slate-800 uppercase text-[11px] mb-1">SENSORY FINDINGS (Latency, Amplitude, CV):</h4>
-                <p id="rep-sensory-findings" class="font-mono text-slate-800 whitespace-pre-line">Normal Latency, Amplitude and CV.</p>
-              </div>
-
-              <div class="p-3.5 rounded-xl border border-slate-200">
-                <h4 id="rep-lbl-sec3" class="font-bold text-slate-800 uppercase text-[11px] mb-1">F-WAVES:</h4>
-                <p id="rep-fwaves-findings" class="font-mono text-slate-800">Normal minimum Latencies.</p>
+            <div class="space-y-3 pt-2 text-xs leading-relaxed font-medium text-slate-900">
+              <p id="rep-eeg-background" class="whitespace-pre-line"></p>
+              <div class="space-y-1">
+                <p id="rep-eeg-reactivity"></p>
+                <p id="rep-eeg-artefacts" class="whitespace-pre-line"></p>
+                <p id="rep-eeg-discharges" class="whitespace-pre-line"></p>
               </div>
             </div>
 
             <!-- IMPRESSION SECTION -->
-            <div class="p-4 rounded-xl bg-white border-2 border-slate-900 text-slate-900 space-y-1.5 shadow-sm">
-              <h4 class="font-black uppercase text-[11px] tracking-wider text-slate-900 border-b border-slate-300 pb-1">IMPRESSION & CLINICAL SYNTHESIS:</h4>
-              <p id="rep-impression-text" class="text-base font-black text-slate-950">EPS of sampled nerves is Within Normal Limits.</p>
+            <div class="pt-4 space-y-1 text-center">
+              <h4 class="font-black uppercase text-xs tracking-wider text-slate-950">Impression:</h4>
+              <p id="rep-eeg-impression-text" class="text-sm sm:text-base font-black text-slate-950">
+                Normal Sleep and awake EEG Record
+              </p>
             </div>
 
-            <div class="text-[11px] font-semibold text-slate-500 pt-2 text-center">
-              ********************End**Of**Report*******************<br/>
-              Clinical correlation is recommended.
+            <div class="text-[11px] font-mono font-bold text-slate-600 pt-3 text-center tracking-widest">
+              *********************End of Report*********************
             </div>
           </div>
 
-          <div class="pt-10 flex justify-between items-end border-t border-slate-300">
-            <div>
-              <p class="text-[10px] text-slate-400">Electronically verified & signed via Nexa-LMIS Clinical ERP</p>
-              <p class="text-[10px] text-slate-400">Al-Jawahira Electrophysiology Kulgam J&K</p>
+          <!-- NCS / EMG / OTHER MODALITY CONTENT CONTAINER -->
+          <div id="rep-ncs-container" class="space-y-4 text-xs">
+            <div class="text-center py-2 border-y border-slate-200">
+              <h3 id="rep-doc-title" class="font-black text-sm tracking-widest text-slate-900 uppercase">NERVE CONDUCTION STUDIES REPORT</h3>
             </div>
-            <div class="text-right space-y-1">
-              <div id="rep-signature-image-container" class="h-14 flex items-end justify-end"></div>
-              <p id="rep-doc-signature-name" class="font-black text-xs text-slate-900">Dr. Rayees Ahmad Tarray</p>
-              <p id="rep-doc-signature-title" class="text-[11px] font-semibold text-indigo-900">Consultant Neurologist & Reporting Specialist</p>
-              <p id="rep-doc-signature-reg" class="text-[10px] text-slate-500">Reg No: JKMC-REG-2026</p>
+
+            <div class="space-y-4 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div><span id="rep-lbl-param1" class="font-bold text-slate-700">Motor Nerves Sampled:</span> <span id="rep-motor-sampled" class="font-medium text-slate-900 block mt-0.5">Bilateral Median and Ulnar nerves.</span></div>
+                <div><span id="rep-lbl-param2" class="font-bold text-slate-700">Sensory Nerves Sampled:</span> <span id="rep-sensory-sampled" class="font-medium text-slate-900 block mt-0.5">Bilateral Median and Ulnar nerves.</span></div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="p-3.5 rounded-xl border border-slate-200">
+                  <h4 id="rep-lbl-sec1" class="font-bold text-slate-800 uppercase text-[11px] mb-1">MOTOR FINDINGS (DML, CMAP, CV):</h4>
+                  <p id="rep-motor-findings" class="font-mono text-slate-800 whitespace-pre-line">Normal DML, CMAP and CV.</p>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200">
+                  <h4 id="rep-lbl-sec2" class="font-bold text-slate-800 uppercase text-[11px] mb-1">SENSORY FINDINGS (Latency, Amplitude, CV):</h4>
+                  <p id="rep-sensory-findings" class="font-mono text-slate-800 whitespace-pre-line">Normal Latency, Amplitude and CV.</p>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200">
+                  <h4 id="rep-lbl-sec3" class="font-bold text-slate-800 uppercase text-[11px] mb-1">F-WAVES:</h4>
+                  <p id="rep-fwaves-findings" class="font-mono text-slate-800">Normal minimum Latencies.</p>
+                </div>
+              </div>
+
+              <!-- IMPRESSION SECTION -->
+              <div class="p-4 rounded-xl bg-white border-2 border-slate-900 text-slate-900 space-y-1.5 shadow-sm">
+                <h4 class="font-black uppercase text-[11px] tracking-wider text-slate-900 border-b border-slate-300 pb-1">IMPRESSION & CLINICAL SYNTHESIS:</h4>
+                <p id="rep-impression-text" class="text-base font-black text-slate-950">EPS of sampled nerves is Within Normal Limits.</p>
+              </div>
+
+              <div class="text-[11px] font-semibold text-slate-500 pt-2 text-center">
+                ********************End**Of**Report*******************<br/>
+                Clinical correlation is recommended.
+              </div>
+            </div>
+          </div>
+
+          <!-- OFFICIAL MEDICAL FOOTER (Docx Standard) -->
+          <div class="pt-8 flex justify-between items-end border-t-2 border-slate-900 text-xs">
+            <div class="space-y-1">
+              <p class="font-bold text-slate-900 text-xs">Reported By:-</p>
+              <p id="rep-doc-signature-name" class="font-black text-sm text-slate-950">Dr Rayees Ahmad Tarray</p>
+              <p id="rep-doc-signature-title" class="text-[11px] font-semibold text-slate-700 whitespace-pre-line">MBBS, MD (Internal Medicine)&#10;DM Neurology (SKIMS Soura)</p>
+              <div id="rep-signature-image-container" class="h-16 flex items-end justify-start pt-1"></div>
+            </div>
+            <div class="text-right space-y-0.5 text-[10px] text-slate-500 font-semibold italic">
+              <p>This Is Only A Professional Opinion</p>
+              <p>Not Valid For Medico-Legal Purposes</p>
+              <p>Cutting and overwriting Is not valid</p>
+              <p class="font-bold text-slate-700 not-italic">Not Valid Without Signature of Neurologist</p>
             </div>
           </div>
         </div>
@@ -1938,9 +2016,15 @@
           </div>
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Residential Address / City / Tehsil</label>
-          <input type="text" id="modal-address" placeholder="e.g. Yaripora, Kulgam / Anantnag" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Residential Address</label>
+            <input type="text" id="modal-address" placeholder="e.g. Okay, Kulgam / Anantnag" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Clinical Technician</label>
+            <input type="text" id="modal-technician" placeholder="e.g. Mr Murtaza Amin" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-medium" />
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -2212,11 +2296,11 @@
         {
           id: 'DOC1',
           name: 'Dr. Rayees Ahmad Tarray',
-          designation: 'Consultant Neurologist & Reporting Specialist',
-          qualification: 'DM / DNB Neurology, MBBS, MD',
+          designation: 'Consultant Neurologist',
+          qualification: 'MBBS, MD (Internal Medicine)\nDM Neurology (SKIMS Soura)',
           regNo: 'JKMC-REG-2026',
           department: 'Department of Clinical Neurophysiology',
-          signatureUrl: ''
+          signatureUrl: '/signatures/dr_rayees.png'
         }
       ],
       tariffs: {
@@ -2905,18 +2989,32 @@
         impression: "EPS findings are suggestive of Bilateral Carpal Tunnel Syndrome (CTS), moderate severity."
       },
       eeg_normal: {
-        reportTitle: "DIGITAL VIDEO ELECTROENCEPHALOGRAPHY (EEG) REPORT",
-        lblParam1: "Montage & Electrode Placement:",
-        lblParam2: "State & Activation Procedures:",
-        lblSec1: "BACKGROUND ACTIVITY & RHYTHM:",
-        lblSec2: "HYPERVENTILATION & PHOTIC STIMULATION:",
+        reportTitle: "EEG REPORT",
+        lblParam1: "Technique & Provocative Procedures:",
+        lblParam2: "Reactivity & State:",
+        lblSec1: "BACKGROUND ACTIVITY:",
+        lblSec2: "REACTIVITY & ARTEFACTS:",
         lblSec3: "EPILEPTIFORM / ABNORMAL DISCHARGES:",
-        motorSampled: "International 10-20 System (21-Channel Bipolar & Referential Montages).",
-        sensorySampled: "Awake resting state, Eye Opening/Closure, Hyperventilation (3 mins), Intermittent Photic Stimulation (IPS).",
-        motorFindings: "Well-organized, symmetrical 9-10 Hz posterior dominant alpha rhythm that attenuates appropriately with eye opening. Normal anterior-posterior gradient.",
-        sensoryFindings: "Hyperventilation produces mild physiological slowing without focal asymmetry. Intermittent Photic Stimulation shows normal photic driving response.",
-        fwavesFindings: "No focal slowing, spikes, sharp waves, or generalized epileptiform discharges recorded.",
-        impression: "Normal Awake Digital Video EEG study. No epileptiform activity seen."
+        motorSampled: "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures",
+        sensorySampled: "Reactivity. +",
+        motorFindings: "Background: slow background with sleep markers like vertex waves and sleep spindles. In later part there is hypnagogic hyper synchrony followed by brief alpha background.",
+        sensoryFindings: "Artefacts +.     \n No abnormal Epileptiform discharges seen.",
+        fwavesFindings: "No abnormal epileptiform discharges seen.",
+        impression: "Normal Sleep and awake EEG Record"
+      },
+      eeg_abnormal: {
+        reportTitle: "EEG REPORT",
+        lblParam1: "Technique & Provocative Procedures:",
+        lblParam2: "Reactivity & State:",
+        lblSec1: "BACKGROUND ACTIVITY:",
+        lblSec2: "REACTIVITY & ARTEFACTS:",
+        lblSec3: "EPILEPTIFORM / ABNORMAL DISCHARGES:",
+        motorSampled: "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures",
+        sensorySampled: "Reactivity. +",
+        motorFindings: "Mild diffuse background slowing with disorganized posterior rhythm.",
+        sensoryFindings: "Frequent high-amplitude generalized spike-wave complexes and focal sharp waves.",
+        fwavesFindings: "Epileptiform discharges augmented during photic stimulation.",
+        impression: "Abnormal Video EEG Record suggestive of generalized epileptiform activity."
       },
       emg_normal: {
         reportTitle: "CONCENTRIC NEEDLE ELECTROMYOGRAPHY (EMG) REPORT",
@@ -3082,6 +3180,7 @@
         gender: document.getElementById('in-gender').value,
         phone: document.getElementById('in-phone').value.trim() || 'N/A',
         address: document.getElementById('in-address')?.value.trim() || '',
+        technician: (document.getElementById('in-technician')?.value || 'Mr Murtaza Amin').trim(),
         refDoctor: refDoctor,
         reportingDoctor: reportingDoctor,
         modality: modality,
@@ -3222,6 +3321,7 @@
         document.getElementById('modal-gender').value = p.gender;
         document.getElementById('modal-phone').value = p.phone;
         document.getElementById('modal-address').value = p.address || '';
+        if (document.getElementById('modal-technician')) document.getElementById('modal-technician').value = p.technician || 'Mr Murtaza Amin';
         document.getElementById('modal-modality').value = p.modality;
         document.getElementById('modal-refdoc').value = p.refDoctor;
         if (p.reportingDoctor) document.getElementById('modal-reporting-doctor').value = p.reportingDoctor;
@@ -3286,6 +3386,7 @@
         gender: document.getElementById('modal-gender').value,
         phone: document.getElementById('modal-phone').value.trim() || 'N/A',
         address: document.getElementById('modal-address')?.value.trim() || '',
+        technician: (document.getElementById('modal-technician')?.value || 'Mr Murtaza Amin').trim(),
         refDoctor: document.getElementById('modal-refdoc').value.trim() || 'Direct Self',
         reportingDoctor: document.getElementById('modal-reporting-doctor').value,
         modality: document.getElementById('modal-modality').value,
@@ -3563,7 +3664,8 @@
       if (!p) return;
       appState.selectedPatientForReport = id;
 
-      document.getElementById('writer-title').value = p.reportTitle || "NERVE CONDUCTION STUDIES REPORT";
+      document.getElementById('writer-title').value = p.reportTitle || (p.modality === 'EEG' ? 'EEG REPORT' : 'NERVE CONDUCTION STUDIES REPORT');
+      if (document.getElementById('writer-technician')) document.getElementById('writer-technician').value = p.technician || 'Mr Murtaza Amin';
       document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
       document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
       document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
@@ -3613,6 +3715,7 @@
       if (!p) return showToast("Please select an active patient first!", "error");
 
       p.reportTitle = document.getElementById('writer-title').value;
+      if (document.getElementById('writer-technician')) p.technician = document.getElementById('writer-technician').value.trim() || 'Mr Murtaza Amin';
       p.lblParam1 = document.getElementById('lbl-writer-param1').innerText;
       p.lblParam2 = document.getElementById('lbl-writer-param2').innerText;
       p.lblSec1 = document.getElementById('lbl-writer-sec1').innerText;
@@ -3711,28 +3814,53 @@
         }
       }
 
-      document.getElementById('rep-patient-name').innerText = p.name;
-      document.getElementById('rep-patient-age-sex').innerText = `${p.age} yrs / ${p.gender}`;
-      document.getElementById('rep-patient-date').innerText = p.date;
-      document.getElementById('rep-patient-token').innerText = `#${p.token}`;
-      document.getElementById('rep-patient-ref').innerText = p.refDoctor;
-      document.getElementById('rep-patient-modality').innerText = `${p.modality} Study`;
-      const repAddr = document.getElementById('rep-patient-address');
-      if (repAddr) repAddr.innerText = p.address || 'Not specified';
+      // Populate Patient Table
+      if (document.getElementById('rep-patient-name')) document.getElementById('rep-patient-name').innerText = p.name;
+      if (document.getElementById('rep-patient-age-sex')) document.getElementById('rep-patient-age-sex').innerText = `${p.age} Years / ${p.gender}`;
+      if (document.getElementById('rep-patient-date')) document.getElementById('rep-patient-date').innerText = p.date;
+      if (document.getElementById('rep-patient-token')) document.getElementById('rep-patient-token').innerText = `${p.token}`;
+      if (document.getElementById('rep-patient-refno')) document.getElementById('rep-patient-refno').innerText = p.phone || 'N/A';
+      if (document.getElementById('rep-patient-ref')) document.getElementById('rep-patient-ref').innerText = p.refDoctor || 'Self';
+      if (document.getElementById('rep-patient-reported-by')) document.getElementById('rep-patient-reported-by').innerText = p.reportingDoctor || activeDoc.name;
+      if (document.getElementById('rep-patient-address')) document.getElementById('rep-patient-address').innerText = p.address || 'Okay Kulgam';
+      if (document.getElementById('rep-patient-technician')) document.getElementById('rep-patient-technician').innerText = p.technician || 'Mr Murtaza Amin';
 
-      document.getElementById('rep-doc-title').innerText = p.reportTitle || "NERVE CONDUCTION STUDIES REPORT";
-      document.getElementById('rep-lbl-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
-      document.getElementById('rep-lbl-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
-      document.getElementById('rep-lbl-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
-      document.getElementById('rep-lbl-sec2').innerText = p.lblSec2 || "SENSORY FINDINGS (Latency, Amplitude, CV):";
-      document.getElementById('rep-lbl-sec3').innerText = p.lblSec3 || "F-WAVES:";
+      const isEeg = (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG'));
+      const eegBox = document.getElementById('rep-eeg-container');
+      const ncsBox = document.getElementById('rep-ncs-container');
 
-      document.getElementById('rep-motor-sampled').innerText = p.motorSampled || "Bilateral Median and Ulnar nerves.";
-      document.getElementById('rep-sensory-sampled').innerText = p.sensorySampled || "Bilateral Median and Ulnar nerves.";
-      document.getElementById('rep-motor-findings').innerText = p.motorFindings || "Normal DML, CMAP and CV.";
-      document.getElementById('rep-sensory-findings').innerText = p.sensoryFindings || "Normal Latency, Amplitude and CV.";
-      document.getElementById('rep-fwaves-findings').innerText = p.fwavesFindings || "Normal minimum Latencies.";
-      document.getElementById('rep-impression-text').innerText = p.impression || "EPS of sampled nerves is Within Normal Limits.";
+      if (isEeg) {
+        if (eegBox) eegBox.style.display = 'block';
+        if (ncsBox) ncsBox.style.display = 'none';
+
+        if (document.getElementById('rep-eeg-doc-title')) document.getElementById('rep-eeg-doc-title').innerText = p.reportTitle || "EEG REPORT";
+        if (document.getElementById('rep-eeg-protocol')) document.getElementById('rep-eeg-protocol').innerText = p.motorSampled || "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures";
+        if (document.getElementById('rep-eeg-background')) document.getElementById('rep-eeg-background').innerText = p.motorFindings || "Background: slow background with sleep markers like vertex waves and sleep spindles. In later part there is hypnagogic hyper synchrony followed by brief alpha background.";
+        if (document.getElementById('rep-eeg-reactivity')) document.getElementById('rep-eeg-reactivity').innerText = p.sensorySampled || "Reactivity. +";
+        if (document.getElementById('rep-eeg-artefacts')) document.getElementById('rep-eeg-artefacts').innerText = p.sensoryFindings || "Artefacts +.     \n No abnormal Epileptiform discharges seen.";
+        if (document.getElementById('rep-eeg-discharges')) {
+          const disc = p.fwavesFindings && p.fwavesFindings !== 'Normal minimum Latencies.' ? p.fwavesFindings : '';
+          document.getElementById('rep-eeg-discharges').innerText = disc;
+        }
+        if (document.getElementById('rep-eeg-impression-text')) document.getElementById('rep-eeg-impression-text').innerText = p.impression || "Normal Sleep and awake EEG Record";
+      } else {
+        if (eegBox) eegBox.style.display = 'none';
+        if (ncsBox) ncsBox.style.display = 'block';
+
+        if (document.getElementById('rep-doc-title')) document.getElementById('rep-doc-title').innerText = p.reportTitle || "NERVE CONDUCTION STUDIES REPORT";
+        if (document.getElementById('rep-lbl-param1')) document.getElementById('rep-lbl-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
+        if (document.getElementById('rep-lbl-param2')) document.getElementById('rep-lbl-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
+        if (document.getElementById('rep-lbl-sec1')) document.getElementById('rep-lbl-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
+        if (document.getElementById('rep-lbl-sec2')) document.getElementById('rep-lbl-sec2').innerText = p.lblSec2 || "SENSORY FINDINGS (Latency, Amplitude, CV):";
+        if (document.getElementById('rep-lbl-sec3')) document.getElementById('rep-lbl-sec3').innerText = p.lblSec3 || "F-WAVES:";
+
+        if (document.getElementById('rep-motor-sampled')) document.getElementById('rep-motor-sampled').innerText = p.motorSampled || "Bilateral Median and Ulnar nerves.";
+        if (document.getElementById('rep-sensory-sampled')) document.getElementById('rep-sensory-sampled').innerText = p.sensorySampled || "Bilateral Median and Ulnar nerves.";
+        if (document.getElementById('rep-motor-findings')) document.getElementById('rep-motor-findings').innerText = p.motorFindings || "Normal DML, CMAP and CV.";
+        if (document.getElementById('rep-sensory-findings')) document.getElementById('rep-sensory-findings').innerText = p.sensoryFindings || "Normal Latency, Amplitude and CV.";
+        if (document.getElementById('rep-fwaves-findings')) document.getElementById('rep-fwaves-findings').innerText = p.fwavesFindings || "Normal minimum Latencies.";
+        if (document.getElementById('rep-impression-text')) document.getElementById('rep-impression-text').innerText = p.impression || "EPS of sampled nerves is Within Normal Limits.";
+      }
 
       // Render Secure Barcode Stamp
       document.getElementById('rep-barcode-token').innerText = `TOKEN #${p.token}`;
