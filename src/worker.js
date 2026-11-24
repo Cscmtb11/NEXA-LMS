@@ -224,6 +224,7 @@ async function ensureD1Schema(db) {
   try { await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_tariffs_tenant_code ON tariffs (tenant_id, code)").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE facility_settings ADD COLUMN cea_reg_no TEXT").run(); } catch (_) {}
   try { await db.prepare("ALTER TABLE patients ADD COLUMN technician TEXT").run(); } catch (_) {}
+  try { await db.prepare("ALTER TABLE tenants ADD COLUMN modules TEXT DEFAULT 'NEURO,CLINICAL,PATHO,BIOCHEM'").run(); } catch (_) {}
 
   // Ensure default primary tenant
   const now = new Date().toISOString();
@@ -316,12 +317,33 @@ function resolveTenantId(request, currentUser = null) {
 }
 
 const DEFAULT_STANDARD_TARIFFS = {
-  NCV:  { code: 'NCV',  name: 'Nerve Conduction Velocity (Motor & Sensory)', fee: 2500, docShare: 1000, refShare: 300 },
-  EEG:  { code: 'EEG',  name: 'Routine Video Electroencephalography',        fee: 2000, docShare: 800,  refShare: 250 },
-  EMG:  { code: 'EMG',  name: 'Concentric Needle Electromyography',          fee: 3000, docShare: 1200, refShare: 400 },
-  RNST: { code: 'RNST', name: 'Repetitive Nerve Stimulation Test',          fee: 2200, docShare: 900,  refShare: 250 },
-  VEP:  { code: 'VEP',  name: 'Visual Evoked Potential (Pattern Reversal)',  fee: 1500, docShare: 600,  refShare: 200 },
-  BERA: { code: 'BERA', name: 'Brainstem Evoked Response Audiometry',       fee: 2500, docShare: 1000, refShare: 300 }
+  // Neuro Electrophysiology
+  NCV:            { code: 'NCV',            name: 'Nerve Conduction Velocity (Motor & Sensory)', fee: 2500, docShare: 1000, refShare: 300, module: 'NEURO' },
+  EEG:            { code: 'EEG',            name: 'Routine Video Electroencephalography',        fee: 2000, docShare: 800,  refShare: 250, module: 'NEURO' },
+  EMG:            { code: 'EMG',            name: 'Concentric Needle Electromyography',          fee: 3000, docShare: 1200, refShare: 400, module: 'NEURO' },
+  RNST:           { code: 'RNST',           name: 'Repetitive Nerve Stimulation Test',          fee: 2200, docShare: 900,  refShare: 250, module: 'NEURO' },
+  VEP:            { code: 'VEP',            name: 'Visual Evoked Potential (Pattern Reversal)',  fee: 1500, docShare: 600,  refShare: 200, module: 'NEURO' },
+  BERA:           { code: 'BERA',           name: 'Brainstem Evoked Response Audiometry',       fee: 2500, docShare: 1000, refShare: 300, module: 'NEURO' },
+  // Clinical Lab
+  URINE_RM:       { code: 'URINE_RM',       name: 'Urine Routine & Microscopic Examination',     fee: 250,  docShare: 80,   refShare: 30,  module: 'CLINICAL' },
+  STOOL_RE:       { code: 'STOOL_RE',       name: 'Stool Routine & Occult Blood Examination',    fee: 250,  docShare: 80,   refShare: 30,  module: 'CLINICAL' },
+  SEMEN_ANALYSIS: { code: 'SEMEN_ANALYSIS', name: 'Comprehensive Semen Fluid Analysis',         fee: 500,  docShare: 150,  refShare: 60,  module: 'CLINICAL' },
+  BODY_FLUID:     { code: 'BODY_FLUID',     name: 'Body Fluid Analysis (Cytology & Protein)',    fee: 800,  docShare: 250,  refShare: 100, module: 'CLINICAL' },
+  // Patho Lab (Hematology & Pathology)
+  CBC:            { code: 'CBC',            name: 'Complete Blood Count (CBC / Hemogram)',       fee: 400,  docShare: 120,  refShare: 50,  module: 'PATHO' },
+  PBS:            { code: 'PBS',            name: 'Peripheral Blood Smear (PBS) Examination',    fee: 300,  docShare: 100,  refShare: 40,  module: 'PATHO' },
+  BG_RH:          { code: 'BG_RH',          name: 'Blood Grouping & Rh Factor Typing',          fee: 150,  docShare: 40,   refShare: 20,  module: 'PATHO' },
+  BT_CT:          { code: 'BT_CT',          name: 'Bleeding Time (BT) & Clotting Time (CT)',     fee: 150,  docShare: 40,   refShare: 20,  module: 'PATHO' },
+  COAG_PROFILE:   { code: 'COAG_PROFILE',   name: 'Coagulation Profile (PT / INR / APTT)',      fee: 800,  docShare: 250,  refShare: 100, module: 'PATHO' },
+  ESR:            { code: 'ESR',            name: 'Erythrocyte Sedimentation Rate (ESR)',        fee: 100,  docShare: 30,   refShare: 15,  module: 'PATHO' },
+  // Bio Chemistry Lab
+  LFT:            { code: 'LFT',            name: 'Liver Function Test Profile (LFT)',          fee: 800,  docShare: 250,  refShare: 100, module: 'BIOCHEM' },
+  KFT:            { code: 'KFT',            name: 'Kidney Function Test Profile (KFT / RFT)',    fee: 700,  docShare: 200,  refShare: 80,  module: 'BIOCHEM' },
+  LIPID:          { code: 'LIPID',          name: 'Lipid Profile (Cholesterol, TG, HDL, LDL)',   fee: 750,  docShare: 220,  refShare: 90,  module: 'BIOCHEM' },
+  BLOOD_SUGAR:    { code: 'BLOOD_SUGAR',    name: 'Blood Glucose Test (Fasting / PP / Random)',  fee: 120,  docShare: 30,   refShare: 15,  module: 'BIOCHEM' },
+  HBA1C:          { code: 'HBA1C',          name: 'Glycated Hemoglobin (HbA1c Blood Test)',      fee: 500,  docShare: 150,  refShare: 60,  module: 'BIOCHEM' },
+  THYROID_PROFILE:{ code: 'THYROID_PROFILE',name: 'Thyroid Function Test (Total T3, T4, TSH)',   fee: 650,  docShare: 200,  refShare: 80,  module: 'BIOCHEM' },
+  ELECTROLYTES:   { code: 'ELECTROLYTES',   name: 'Serum Electrolytes (Na+, K+, Cl-)',          fee: 500,  docShare: 150,  refShare: 60,  module: 'BIOCHEM' }
 };
 
 /**
@@ -350,7 +372,7 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
     db.prepare("SELECT * FROM expenses WHERE tenant_id = ? ORDER BY category ASC, name ASC").bind(tenantId).all()
   ]);
 
-  const tariffsObj = {};
+  const tariffsObj = { ...DEFAULT_STANDARD_TARIFFS };
   if (tariffsResult.results && tariffsResult.results.length > 0) {
     tariffsResult.results.forEach(t => {
       tariffsObj[t.code] = {
@@ -358,12 +380,10 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
         name: t.name,
         fee: t.fee,
         docShare: t.doc_share,
-        refShare: t.ref_share
+        refShare: t.ref_share,
+        module: DEFAULT_STANDARD_TARIFFS[t.code]?.module || 'NEURO'
       };
     });
-  } else {
-    // Provide standard base tariffs if not yet customized
-    Object.assign(tariffsObj, DEFAULT_STANDARD_TARIFFS);
   }
 
   const doctorsList = (doctorsResult.results || []).map(d => ({
@@ -426,13 +446,15 @@ async function getFullState(db, userRole = null, tenantId = 'default') {
       name: tenantRow.name,
       slug: tenantRow.slug,
       plan: tenantRow.plan,
-      status: tenantRow.status
+      status: tenantRow.status,
+      modules: tenantRow.modules || 'NEURO,CLINICAL,PATHO,BIOCHEM'
     } : {
       id: tenantId,
       name: tenantName,
       slug: tenantId,
       plan: 'PRO',
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      modules: 'NEURO,CLINICAL,PATHO,BIOCHEM'
     },
     settings: settingsRow ? {
       facilityName: settingsRow.facility_name,
@@ -548,7 +570,7 @@ export default {
 
         const { results = [] } = await env.DB.prepare(`
           SELECT 
-            t.id, t.name, t.slug, t.plan, t.status, t.created_at,
+            t.id, t.name, t.slug, t.plan, t.status, t.modules, t.created_at,
             fs.parent_entity, fs.address, fs.phones, fs.vpa,
             (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id) as user_count,
             (SELECT full_name FROM users u WHERE u.tenant_id = t.id AND u.role = 'ADMIN' LIMIT 1) as admin_full_name,
@@ -589,6 +611,9 @@ export default {
 
         const tenantId = 'org_' + slug;
         const now = new Date().toISOString();
+        const modules = Array.isArray(body.modules) 
+          ? body.modules.join(',') 
+          : (typeof body.modules === 'string' && body.modules.trim() ? body.modules.trim() : 'NEURO,CLINICAL,PATHO,BIOCHEM');
 
         // Admin Credentials for this tenant
         const adminUsername = String(body.adminUsername || ('admin.' + slug)).trim().toLowerCase();
@@ -602,9 +627,9 @@ export default {
 
         await env.DB.batch([
           env.DB.prepare(`
-            INSERT INTO tenants (id, name, slug, plan, status, created_at)
-            VALUES (?, ?, ?, ?, 'ACTIVE', ?)
-          `).bind(tenantId, name, slug, plan, now),
+            INSERT INTO tenants (id, name, slug, plan, status, modules, created_at)
+            VALUES (?, ?, ?, ?, 'ACTIVE', ?, ?)
+          `).bind(tenantId, name, slug, plan, modules, now),
 
           env.DB.prepare(`
             INSERT INTO facility_settings (id, tenant_id, facility_name, parent_entity, cin, dpiit, address, phones, vpa, updated_at)
@@ -684,6 +709,25 @@ export default {
         return jsonResponse({ ok: true, adminStatus: status, message: `Admin user status set to ${status}.` });
       }
 
+      // PUT /api/master/tenants/:id/modules - Update tenant laboratory module authorizations (Master Admin Only)
+      if (url.pathname.startsWith('/api/master/tenants/') && url.pathname.endsWith('/modules') && request.method === 'PUT') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+          return jsonResponse({ error: 'SpringNexa Master Administrator access required.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[4];
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const modules = Array.isArray(body.modules)
+          ? body.modules.join(',')
+          : String(body.modules || 'NEURO');
+
+        await env.DB.prepare("UPDATE tenants SET modules = ? WHERE id = ?").bind(modules, id).run();
+        return jsonResponse({ ok: true, modules, message: 'Laboratory module authorization updated successfully.' });
+      }
+
       // PUT /api/master/tenants/:id - Update tenant subscription/details (Master Admin Only)
       if (url.pathname.startsWith('/api/master/tenants/') && !url.pathname.includes('/reset-admin') && request.method === 'PUT') {
         const currentUser = await authenticateUser(request, env.DB);
@@ -698,11 +742,20 @@ export default {
         const name = String(body.name || '').trim();
         const plan = String(body.plan || 'PRO').toUpperCase();
         const status = String(body.status || 'ACTIVE').toUpperCase();
+        const modules = Array.isArray(body.modules)
+          ? body.modules.join(',')
+          : (typeof body.modules === 'string' ? body.modules.trim() : null);
         const now = new Date().toISOString();
 
-        await env.DB.prepare(`
-          UPDATE tenants SET name = ?, plan = ?, status = ? WHERE id = ?
-        `).bind(name, plan, status, id).run();
+        if (modules !== null) {
+          await env.DB.prepare(`
+            UPDATE tenants SET name = ?, plan = ?, status = ?, modules = ? WHERE id = ?
+          `).bind(name, plan, status, modules, id).run();
+        } else {
+          await env.DB.prepare(`
+            UPDATE tenants SET name = ?, plan = ?, status = ? WHERE id = ?
+          `).bind(name, plan, status, id).run();
+        }
 
         if (body.address !== undefined || body.phones !== undefined || body.parentEntity !== undefined) {
           await env.DB.prepare(`
@@ -788,7 +841,7 @@ export default {
       // Backward-compatible alias for existing endpoints
       if (url.pathname === '/api/tenants' && request.method === 'GET') {
         const { results = [] } = await env.DB.prepare(`
-          SELECT id, name, slug, plan, status, created_at FROM tenants ORDER BY created_at ASC
+          SELECT id, name, slug, plan, status, modules, created_at FROM tenants ORDER BY created_at ASC
         `).all();
         return jsonResponse({ ok: true, tenants: results });
       }
@@ -867,8 +920,10 @@ export default {
             id: tenant.id,
             name: tenant.name,
             slug: tenant.slug,
-            plan: tenant.plan
-          } : { id: 'default', name: 'Nexa-LMIS Workstation', slug: 'default', plan: 'PRO' },
+            plan: tenant.plan,
+            status: tenant.status,
+            modules: tenant.modules || 'NEURO,CLINICAL,PATHO,BIOCHEM'
+          } : { id: 'default', name: 'Nexa-LMIS Workstation', slug: 'default', plan: 'PRO', modules: 'NEURO,CLINICAL,PATHO,BIOCHEM' },
           expiresAt
         });
       }
@@ -880,7 +935,18 @@ export default {
           return jsonResponse({ error: 'Unauthenticated session.' }, 401);
         }
         const tenant = await env.DB.prepare("SELECT * FROM tenants WHERE id = ?").bind(currentUser.tenantId).first();
-        return jsonResponse({ ok: true, user: currentUser, tenant });
+        return jsonResponse({
+          ok: true,
+          user: currentUser,
+          tenant: tenant ? {
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            plan: tenant.plan,
+            status: tenant.status,
+            modules: tenant.modules || 'NEURO,CLINICAL,PATHO,BIOCHEM'
+          } : null
+        });
       }
 
       // POST /api/auth/logout

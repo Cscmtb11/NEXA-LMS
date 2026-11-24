@@ -427,6 +427,7 @@
                   <th class="py-3 px-3">Clinic Organization</th>
                   <th class="py-3 px-3">Subscription Tier</th>
                   <th class="py-3 px-3 text-center">Org Status</th>
+                  <th class="py-3 px-3">Authorized Modules</th>
                   <th class="py-3 px-3">Organization Admin User</th>
                   <th class="py-3 px-3 text-center">Admin Status</th>
                   <th class="py-3 px-3">Facility Contact</th>
@@ -434,7 +435,7 @@
                 </tr>
               </thead>
               <tbody id="master-tenants-tbody" class="divide-y divide-slate-100 text-slate-700 font-medium">
-                <tr><td colspan="7" class="py-8 text-center text-slate-400">Loading organizations...</td></tr>
+                <tr><td colspan="8" class="py-8 text-center text-slate-400">Loading organizations...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1033,19 +1034,52 @@
             </div>
           </div>
 
-          <!-- QUICK PRESETS -->
-          <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-            <span class="text-xs font-bold text-slate-700 block">One-Click Multi-Modality Clinical Presets:</span>
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button" onclick="loadNcsTemplate('normal')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">✓ NCS Normal</button>
-              <button type="button" onclick="loadNcsTemplate('ulnar')" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition">⚡ Left Ulnar Neuropathy</button>
-              <button type="button" onclick="loadNcsTemplate('cts')" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition">⚡ Bilateral CTS</button>
-              <button type="button" onclick="loadNcsTemplate('eeg_normal')" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition">🧠 Video EEG Normal</button>
-              <button type="button" onclick="loadNcsTemplate('eeg_abnormal')" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition">⚠️ Video EEG Abnormal</button>
-              <button type="button" onclick="loadNcsTemplate('emg_normal')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition">💪 EMG Normal</button>
-              <button type="button" onclick="loadNcsTemplate('rnst_normal')" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition">🔌 RNST Normal</button>
-              <button type="button" onclick="loadNcsTemplate('vep_normal')" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition">👁️ VEP Normal</button>
-              <button type="button" onclick="loadNcsTemplate('bera_normal')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-sm transition">👂 BERA Normal</button>
+          <!-- QUICK PRESETS (Grouped & Filtered by Tenant Module Authorization) -->
+          <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> Clinical Investigation Presets & Templates
+              </span>
+              <div id="writer-preset-tabs" class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <button type="button" onclick="filterWriterPresets('ALL')" class="preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-white" data-mod="ALL">All Available</button>
+                <button type="button" onclick="filterWriterPresets('NEURO')" class="preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-white text-slate-700 hover:bg-slate-200 border border-slate-300" data-mod="NEURO">🧠 Neuro</button>
+                <button type="button" onclick="filterWriterPresets('CLINICAL')" class="preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-white text-slate-700 hover:bg-slate-200 border border-slate-300" data-mod="CLINICAL">🧪 Clinical Lab</button>
+                <button type="button" onclick="filterWriterPresets('PATHO')" class="preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-white text-slate-700 hover:bg-slate-200 border border-slate-300" data-mod="PATHO">🩸 Patho Lab</button>
+                <button type="button" onclick="filterWriterPresets('BIOCHEM')" class="preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-white text-slate-700 hover:bg-slate-200 border border-slate-300" data-mod="BIOCHEM">⚗️ Bio Chemistry</button>
+              </div>
+            </div>
+
+            <!-- PRESET BUTTONS WRAPPER -->
+            <div id="writer-presets-container" class="flex flex-wrap items-center gap-2">
+              <!-- NEURO PRESETS -->
+              <button type="button" onclick="loadNcsTemplate('normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">✓ NCS Normal</button>
+              <button type="button" onclick="loadNcsTemplate('ulnar')" class="preset-pill px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">⚡ Left Ulnar Neuropathy</button>
+              <button type="button" onclick="loadNcsTemplate('cts')" class="preset-pill px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">⚡ Bilateral CTS</button>
+              <button type="button" onclick="loadNcsTemplate('eeg_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">🧠 Video EEG Normal</button>
+              <button type="button" onclick="loadNcsTemplate('eeg_abnormal')" class="preset-pill px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">⚠️ Video EEG Abnormal</button>
+              <button type="button" onclick="loadNcsTemplate('emg_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">💪 EMG Normal</button>
+              <button type="button" onclick="loadNcsTemplate('rnst_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">🔌 RNST Normal</button>
+              <button type="button" onclick="loadNcsTemplate('vep_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">👁️ VEP Normal</button>
+              <button type="button" onclick="loadNcsTemplate('bera_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-sm transition" data-module="NEURO">👂 BERA Normal</button>
+
+              <!-- CLINICAL LAB PRESETS -->
+              <button type="button" onclick="loadNcsTemplate('urine_rm_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-sm transition" data-module="CLINICAL">🧪 Urine R/M Normal</button>
+              <button type="button" onclick="loadNcsTemplate('urine_rm_uti')" class="preset-pill px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs shadow-sm transition" data-module="CLINICAL">⚠️ Urine UTI / Pyuria</button>
+              <button type="button" onclick="loadNcsTemplate('stool_re_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs shadow-sm transition" data-module="CLINICAL">🔬 Stool Routine Normal</button>
+              <button type="button" onclick="loadNcsTemplate('semen_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-sm transition" data-module="CLINICAL">💧 Semen Analysis</button>
+
+              <!-- PATHO LAB PRESETS -->
+              <button type="button" onclick="loadNcsTemplate('cbc_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white font-bold text-xs shadow-sm transition" data-module="PATHO">🩸 CBC Normal</button>
+              <button type="button" onclick="loadNcsTemplate('cbc_anemia')" class="preset-pill px-3 py-1.5 rounded-lg bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs shadow-sm transition" data-module="PATHO">⚠️ CBC Anemia Profile</button>
+              <button type="button" onclick="loadNcsTemplate('coag_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-sm transition" data-module="PATHO">⏱️ Coagulation PT/INR</button>
+
+              <!-- BIOCHEMISTRY PRESETS -->
+              <button type="button" onclick="loadNcsTemplate('lft_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs shadow-sm transition" data-module="BIOCHEM">🧪 LFT Normal</button>
+              <button type="button" onclick="loadNcsTemplate('lft_hepatitis')" class="preset-pill px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs shadow-sm transition" data-module="BIOCHEM">⚠️ LFT Acute Hepatitis</button>
+              <button type="button" onclick="loadNcsTemplate('kft_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs shadow-sm transition" data-module="BIOCHEM">🧪 KFT / RFT Normal</button>
+              <button type="button" onclick="loadNcsTemplate('lipid_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm transition" data-module="BIOCHEM">🫀 Lipid Profile Normal</button>
+              <button type="button" onclick="loadNcsTemplate('diabetic_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition" data-module="BIOCHEM">🍬 Sugar &amp; HbA1c</button>
+              <button type="button" onclick="loadNcsTemplate('thyroid_normal')" class="preset-pill px-3 py-1.5 rounded-lg bg-violet-700 hover:bg-violet-800 text-white font-bold text-xs shadow-sm transition" data-module="BIOCHEM">🦋 Thyroid Profile (TFT)</button>
             </div>
           </div>
 
@@ -1061,30 +1095,70 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label id="lbl-writer-param1" class="block font-bold text-slate-700 mb-1">Motor Nerves / Montage / Muscles Sampled</label>
-                <input type="text" id="writer-motor-sampled" required class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium" />
+            <!-- NEURO ELECTROPHYSIOLOGY SECTION (Shown for EEG, NCS, EMG) -->
+            <div id="writer-neuro-fields" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label id="lbl-writer-param1" class="block font-bold text-slate-700 mb-1">Motor Nerves / Montage / Muscles Sampled</label>
+                  <input type="text" id="writer-motor-sampled" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium" />
+                </div>
+                <div>
+                  <label id="lbl-writer-param2" class="block font-bold text-slate-700 mb-1">Sensory Nerves / Stimulus / Activation</label>
+                  <input type="text" id="writer-sensory-sampled" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium" />
+                </div>
               </div>
+
               <div>
-                <label id="lbl-writer-param2" class="block font-bold text-slate-700 mb-1">Sensory Nerves / Stimulus / Activation</label>
-                <input type="text" id="writer-sensory-sampled" required class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-medium" />
+                <label id="lbl-writer-sec1" class="block font-bold text-slate-700 mb-1">Section 1 Findings (Motor / Background / Insertional)</label>
+                <textarea id="writer-motor-findings" rows="2" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-mono text-xs"></textarea>
+              </div>
+
+              <div>
+                <label id="lbl-writer-sec2" class="block font-bold text-slate-700 mb-1">Section 2 Findings (Sensory / Activation / MUAPs / Latencies)</label>
+                <textarea id="writer-sensory-findings" rows="3" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-mono text-xs"></textarea>
+              </div>
+
+              <div>
+                <label id="lbl-writer-sec3" class="block font-bold text-slate-700 mb-1">Section 3 Findings (F-Waves / Photic / Recruitment / Interpeak)</label>
+                <input type="text" id="writer-fwaves-findings" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-mono" />
               </div>
             </div>
 
-            <div>
-              <label id="lbl-writer-sec1" class="block font-bold text-slate-700 mb-1">Section 1 Findings (Motor / Background / Insertional)</label>
-              <textarea id="writer-motor-findings" rows="2" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-mono text-xs"></textarea>
-            </div>
+            <!-- LABORATORY INVESTIGATION PARAMETERS TABLE (Shown for Clinical, Patho, Biochem Labs) -->
+            <div id="writer-lab-fields" class="space-y-4" style="display: none;">
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+                    <span class="font-bold text-slate-800 text-xs">Laboratory Investigation Test Parameters</span>
+                  </div>
+                  <button type="button" onclick="addWriterLabParamRow()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shadow-xs flex items-center gap-1 transition">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Parameter Row
+                  </button>
+                </div>
 
-            <div>
-              <label id="lbl-writer-sec2" class="block font-bold text-slate-700 mb-1">Section 2 Findings (Sensory / Activation / MUAPs / Latencies)</label>
-              <textarea id="writer-sensory-findings" rows="3" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-mono text-xs"></textarea>
-            </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs">
+                    <thead>
+                      <tr class="bg-slate-200 text-slate-700 font-bold uppercase text-[10px]">
+                        <th class="p-2 text-left rounded-l-lg">Investigation Parameter</th>
+                        <th class="p-2 text-center w-28">Observed Value</th>
+                        <th class="p-2 text-center w-24">Unit</th>
+                        <th class="p-2 text-center w-40">Biological Ref. Range</th>
+                        <th class="p-2 text-center w-28">Status / Flag</th>
+                        <th class="p-2 text-center w-12 rounded-r-lg">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="writer-lab-tbody" class="divide-y divide-slate-200">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-            <div>
-              <label id="lbl-writer-sec3" class="block font-bold text-slate-700 mb-1">Section 3 Findings (F-Waves / Photic / Recruitment / Interpeak)</label>
-              <input type="text" id="writer-fwaves-findings" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-mono" />
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Microscopic Examination &amp; Peripheral Smear / Clinical Notes</label>
+                <textarea id="writer-lab-notes" rows="2" placeholder="e.g. Normocytic normochromic smear, no hemoparasites..." class="w-full bg-white border border-slate-300 rounded-xl p-3 font-mono text-xs"></textarea>
+              </div>
             </div>
 
             <div>
@@ -1117,6 +1191,7 @@
               <thead>
                 <tr class="bg-slate-900 text-white uppercase text-[10px]">
                   <th class="py-3 px-3 rounded-l-xl">Code</th>
+                  <th class="py-3 px-3">Laboratory Module</th>
                   <th class="py-3 px-3">Diagnostic Study Modality</th>
                   <th class="py-3 px-3 text-right">Standard Fee (₹)</th>
                   <th class="py-3 px-3 text-right text-amber-300">Reporting Charges (₹)</th>
@@ -1237,6 +1312,47 @@
 
             <div class="text-[11px] font-mono font-bold text-slate-600 pt-3 text-center tracking-widest">
               *********************End of Report*********************
+            </div>
+          </div>
+
+          <!-- CLINICAL LAB / PATHO / BIOCHEM REPORT CONTAINER -->
+          <div id="rep-lab-container" class="space-y-4 text-xs" style="display: none;">
+            <div class="text-center py-2 border-y-2 border-slate-900 my-2">
+              <h3 id="rep-lab-doc-title" class="font-black text-sm tracking-widest text-slate-950 uppercase">CLINICAL LABORATORY INVESTIGATION REPORT</h3>
+              <p id="rep-lab-method-sub" class="text-[10px] text-slate-600 font-mono mt-0.5"></p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs border border-slate-900" style="border-collapse: collapse;">
+                <thead>
+                  <tr class="bg-slate-100 border-b border-slate-900 text-slate-950 font-black tracking-wide uppercase text-[10px]">
+                    <th class="border border-slate-900 px-3 py-2 text-left">Investigation / Test Parameter</th>
+                    <th class="border border-slate-900 px-3 py-2 text-center w-[18%]">Observed Value</th>
+                    <th class="border border-slate-900 px-3 py-2 text-center w-[14%]">Units</th>
+                    <th class="border border-slate-900 px-3 py-2 text-center w-[28%]">Biological Ref. Intervals</th>
+                    <th class="border border-slate-900 px-3 py-2 text-center w-[12%]">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-lab-tbody" class="divide-y divide-slate-300">
+                </tbody>
+              </table>
+            </div>
+
+            <!-- NOTES / MICROSCOPY FINDINGS SECTION -->
+            <div id="rep-lab-notes-box" class="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs leading-relaxed space-y-1">
+              <h5 id="rep-lab-notes-title" class="font-bold text-slate-900 uppercase text-[10px] tracking-wider">Examination &amp; Microscopy Notes:</h5>
+              <p id="rep-lab-notes-text" class="text-slate-800 whitespace-pre-line font-mono text-[11px]"></p>
+            </div>
+
+            <!-- IMPRESSION SECTION -->
+            <div class="p-4 rounded-xl bg-white border-2 border-slate-900 text-slate-900 space-y-1 shadow-sm">
+              <h4 class="font-black uppercase text-[11px] tracking-wider text-slate-900 border-b border-slate-200 pb-1">DIAGNOSTIC IMPRESSION:</h4>
+              <p id="rep-lab-impression-text" class="text-sm font-black text-slate-950"></p>
+            </div>
+
+            <div class="text-[11px] font-semibold text-slate-500 pt-2 text-center">
+              ********************End**Of**Laboratory**Report*******************<br/>
+              Results relate only to the specimen tested. Clinical correlation is recommended.
             </div>
           </div>
 
@@ -1862,6 +1978,46 @@
           </div>
         </div>
 
+        <!-- Super Admin Module Authorization Selection -->
+        <div class="p-3.5 bg-purple-50/70 rounded-xl border border-purple-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-700"></i> Super Admin Module Authorization
+            </span>
+            <span class="text-[9px] text-purple-600 font-semibold">Enable authorized labs</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="madd-mod-neuro" checked class="w-4 h-4 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Neuro Electrophysiology</span>
+                <span class="text-[10px] text-slate-400">NCV, EEG, EMG, VEP, BERA</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="madd-mod-clinical" checked class="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Clinical Lab</span>
+                <span class="text-[10px] text-slate-400">Urine R/M, Stool, Semen, Fluids</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="madd-mod-patho" checked class="w-4 h-4 mt-0.5 rounded text-purple-600 focus:ring-purple-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Patho Lab (Hematology)</span>
+                <span class="text-[10px] text-slate-400">CBC, Smear, Grouping, PT/INR</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="madd-mod-biochem" checked class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Bio Chemistry Lab</span>
+                <span class="text-[10px] text-slate-400">LFT, KFT, Lipids, Sugar, HbA1c</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 space-y-2">
           <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 block">Initial Clinic Administrator Credentials</span>
           <div class="grid grid-cols-3 gap-2">
@@ -1894,7 +2050,7 @@
   <!-- MASTER EDIT TENANT MODAL                   -->
   <!-- ========================================== -->
   <div id="masterEditTenantModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <h3 class="text-base font-bold text-slate-900">Edit Clinic Tenant</h3>
         <button onclick="closeMasterEditTenantModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -1937,9 +2093,123 @@
             <input type="text" id="medit-phones" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2" />
           </div>
         </div>
+
+        <!-- Super Admin Module Authorization in Edit Modal -->
+        <div class="p-3.5 bg-purple-50/70 rounded-xl border border-purple-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-700"></i> Super Admin Module Authorization
+            </span>
+            <span class="text-[9px] text-purple-600 font-semibold">Master permission flags</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="medit-mod-neuro" class="w-4 h-4 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Neuro Electrophysiology</span>
+                <span class="text-[10px] text-slate-400">NCV, EEG, EMG, VEP</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="medit-mod-clinical" class="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Clinical Lab</span>
+                <span class="text-[10px] text-slate-400">Urine R/M, Stool, Semen</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="medit-mod-patho" class="w-4 h-4 mt-0.5 rounded text-purple-600 focus:ring-purple-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Patho Lab (Hematology)</span>
+                <span class="text-[10px] text-slate-400">CBC, Smear, Grouping</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 rounded-lg bg-white border border-purple-200 cursor-pointer hover:bg-purple-50/40 transition">
+              <input type="checkbox" id="medit-mod-biochem" class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500" />
+              <div>
+                <span class="font-bold text-slate-800 block leading-tight">Bio Chemistry Lab</span>
+                <span class="text-[10px] text-slate-400">LFT, KFT, Lipids, Sugar</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <div class="pt-2 flex items-center justify-end gap-2">
           <button type="button" onclick="closeMasterEditTenantModal()" class="px-4 py-2 rounded-xl bg-slate-100 font-bold text-slate-700">Cancel</button>
           <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold shadow">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MASTER DEDICATED MODULE AUTHORIZATION MODAL-->
+  <!-- ========================================== -->
+  <div id="masterModulesModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Laboratory Module Authorization</h3>
+            <p id="mmod-clinic-name" class="text-xs text-slate-500 font-medium">Clinic Organization</p>
+          </div>
+        </div>
+        <button onclick="closeMasterModulesModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-950 text-xs">
+        <p class="font-bold flex items-center gap-1.5">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-purple-700"></i> Super Admin Exclusive Authorization
+        </p>
+        <p class="text-[11px] text-purple-800 mt-1">
+          Only toggled laboratory modules will be enabled and accessible by this clinic's doctors, technicians, and report writers.
+        </p>
+      </div>
+
+      <form onsubmit="handleMasterSaveModules(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="mmod-tenant-id" />
+        <div class="space-y-2">
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition">
+            <input type="checkbox" id="mmod-check-neuro" class="w-4 h-4 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500" />
+            <div>
+              <span class="font-bold text-slate-900 block">Neuro Electrophysiology Lab</span>
+              <span class="text-[11px] text-slate-500">Nerve Conduction Velocity (NCV), Video EEG, Needle EMG, RNST, VEP, BERA.</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition">
+            <input type="checkbox" id="mmod-check-clinical" class="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500" />
+            <div>
+              <span class="font-bold text-slate-900 block">Clinical Pathology Lab</span>
+              <span class="text-[11px] text-slate-500">Urine Routine & Microscopy, Stool Analysis, Semen Analysis, Body Fluids.</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition">
+            <input type="checkbox" id="mmod-check-patho" class="w-4 h-4 mt-0.5 rounded text-purple-600 focus:ring-purple-500" />
+            <div>
+              <span class="font-bold text-slate-900 block">Pathology & Hematology Lab</span>
+              <span class="text-[11px] text-slate-500">Complete Blood Count (CBC/Hemogram), Peripheral Smear, Blood Group, Coagulation (PT/INR).</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition">
+            <input type="checkbox" id="mmod-check-biochem" class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500" />
+            <div>
+              <span class="font-bold text-slate-900 block">Clinical Bio Chemistry Lab</span>
+              <span class="text-[11px] text-slate-500">Liver Function (LFT), Kidney Function (KFT), Lipid Profile, Sugar & HbA1c, Thyroid (TFT), Electrolytes.</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeMasterModulesModal()" class="px-4 py-2 rounded-xl bg-slate-100 font-bold text-slate-700">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold shadow flex items-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i> Save Module Authorizations
+          </button>
         </div>
       </form>
     </div>
@@ -2279,9 +2549,29 @@
   <script>
     const STORAGE_KEY = 'NEXA_LMIS_SAAS_V6';
 
+    const MODALITY_MODULE_MAP = {
+      NCV: 'NEURO', EEG: 'NEURO', EMG: 'NEURO', RNST: 'NEURO', VEP: 'NEURO', BERA: 'NEURO',
+      URINE_RM: 'CLINICAL', STOOL_RE: 'CLINICAL', SEMEN_ANALYSIS: 'CLINICAL', BODY_FLUID: 'CLINICAL',
+      CBC: 'PATHO', PBS: 'PATHO', BG_RH: 'PATHO', BT_CT: 'PATHO', COAG_PROFILE: 'PATHO', ESR: 'PATHO',
+      LFT: 'BIOCHEM', KFT: 'BIOCHEM', LIPID: 'BIOCHEM', BLOOD_SUGAR: 'BIOCHEM', HBA1C: 'BIOCHEM', THYROID_PROFILE: 'BIOCHEM', ELECTROLYTES: 'BIOCHEM'
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     const DEFAULT_STATE = {
       activeTab: 'intake',
       selectedPatientForReport: null,
+      tenant: {
+        id: 'default',
+        name: 'Al-Jawahira Neuro & Clinical Lab Workstation',
+        slug: 'al-jawahira',
+        plan: 'PRO',
+        status: 'ACTIVE',
+        modules: 'NEURO,CLINICAL,PATHO,BIOCHEM'
+      },
       settings: {
         facilityName: 'Al-Jawahira Electrophysiology',
         parentEntity: 'Nexa-LMIS Enterprise Network',
@@ -2304,12 +2594,33 @@
         }
       ],
       tariffs: {
-        NCV:  { code: 'NCV',  name: 'Nerve Conduction Velocity (Motor & Sensory)', fee: 2500, docShare: 1000, refShare: 300 },
-        EEG:  { code: 'EEG',  name: 'Routine Video Electroencephalography',        fee: 2000, docShare: 800,  refShare: 250 },
-        EMG:  { code: 'EMG',  name: 'Concentric Needle Electromyography',          fee: 3000, docShare: 1200, refShare: 400 },
-        RNST: { code: 'RNST', name: 'Repetitive Nerve Stimulation Test',          fee: 2200, docShare: 900,  refShare: 250 },
-        VEP:  { code: 'VEP',  name: 'Visual Evoked Potential (Pattern Reversal)',  fee: 1500, docShare: 600,  refShare: 200 },
-        BERA: { code: 'BERA', name: 'Brainstem Evoked Response Audiometry',       fee: 2500, docShare: 1000, refShare: 300 }
+        // Neuro Electrophysiology
+        NCV:            { code: 'NCV',            name: 'Nerve Conduction Velocity (Motor & Sensory)', fee: 2500, docShare: 1000, refShare: 300, module: 'NEURO' },
+        EEG:            { code: 'EEG',            name: 'Routine Video Electroencephalography',        fee: 2000, docShare: 800,  refShare: 250, module: 'NEURO' },
+        EMG:            { code: 'EMG',            name: 'Concentric Needle Electromyography',          fee: 3000, docShare: 1200, refShare: 400, module: 'NEURO' },
+        RNST:           { code: 'RNST',           name: 'Repetitive Nerve Stimulation Test',          fee: 2200, docShare: 900,  refShare: 250, module: 'NEURO' },
+        VEP:            { code: 'VEP',            name: 'Visual Evoked Potential (Pattern Reversal)',  fee: 1500, docShare: 600,  refShare: 200, module: 'NEURO' },
+        BERA:           { code: 'BERA',           name: 'Brainstem Evoked Response Audiometry',       fee: 2500, docShare: 1000, refShare: 300, module: 'NEURO' },
+        // Clinical Lab
+        URINE_RM:       { code: 'URINE_RM',       name: 'Urine Routine & Microscopic Examination',     fee: 250,  docShare: 80,   refShare: 30,  module: 'CLINICAL' },
+        STOOL_RE:       { code: 'STOOL_RE',       name: 'Stool Routine & Occult Blood Examination',    fee: 250,  docShare: 80,   refShare: 30,  module: 'CLINICAL' },
+        SEMEN_ANALYSIS: { code: 'SEMEN_ANALYSIS', name: 'Comprehensive Semen Fluid Analysis',         fee: 500,  docShare: 150,  refShare: 60,  module: 'CLINICAL' },
+        BODY_FLUID:     { code: 'BODY_FLUID',     name: 'Body Fluid Analysis (Cytology & Protein)',    fee: 800,  docShare: 250,  refShare: 100, module: 'CLINICAL' },
+        // Patho Lab
+        CBC:            { code: 'CBC',            name: 'Complete Blood Count (CBC / Hemogram)',       fee: 400,  docShare: 120,  refShare: 50,  module: 'PATHO' },
+        PBS:            { code: 'PBS',            name: 'Peripheral Blood Smear (PBS) Examination',    fee: 300,  docShare: 100,  refShare: 40,  module: 'PATHO' },
+        BG_RH:          { code: 'BG_RH',          name: 'Blood Grouping & Rh Factor Typing',          fee: 150,  docShare: 40,   refShare: 20,  module: 'PATHO' },
+        BT_CT:          { code: 'BT_CT',          name: 'Bleeding Time (BT) & Clotting Time (CT)',     fee: 150,  docShare: 40,   refShare: 20,  module: 'PATHO' },
+        COAG_PROFILE:   { code: 'COAG_PROFILE',   name: 'Coagulation Profile (PT / INR / APTT)',      fee: 800,  docShare: 250,  refShare: 100, module: 'PATHO' },
+        ESR:            { code: 'ESR',            name: 'Erythrocyte Sedimentation Rate (ESR)',        fee: 100,  docShare: 30,   refShare: 15,  module: 'PATHO' },
+        // Bio Chemistry Lab
+        LFT:            { code: 'LFT',            name: 'Liver Function Test Profile (LFT)',          fee: 800,  docShare: 250,  refShare: 100, module: 'BIOCHEM' },
+        KFT:            { code: 'KFT',            name: 'Kidney Function Test Profile (KFT / RFT)',    fee: 700,  docShare: 200,  refShare: 80,  module: 'BIOCHEM' },
+        LIPID:          { code: 'LIPID',          name: 'Lipid Profile (Cholesterol, TG, HDL, LDL)',   fee: 750,  docShare: 220,  refShare: 90,  module: 'BIOCHEM' },
+        BLOOD_SUGAR:    { code: 'BLOOD_SUGAR',    name: 'Blood Glucose Test (Fasting / PP / Random)',  fee: 120,  docShare: 30,   refShare: 15,  module: 'BIOCHEM' },
+        HBA1C:          { code: 'HBA1C',          name: 'Glycated Hemoglobin (HbA1c Blood Test)',      fee: 500,  docShare: 150,  refShare: 60,  module: 'BIOCHEM' },
+        THYROID_PROFILE:{ code: 'THYROID_PROFILE',name: 'Thyroid Function Test (Total T3, T4, TSH)',   fee: 650,  docShare: 200,  refShare: 80,  module: 'BIOCHEM' },
+        ELECTROLYTES:   { code: 'ELECTROLYTES',   name: 'Serum Electrolytes (Na+, K+, Cl-)',          fee: 500,  docShare: 150,  refShare: 60,  module: 'BIOCHEM' }
       },
       patients: [],
       ledgerEntries: [],
@@ -2319,6 +2630,20 @@
     };
 
     let appState = loadState();
+    // Guarantee defaults and merge new tariffs
+    if (!appState.tenant) {
+      appState.tenant = JSON.parse(JSON.stringify(DEFAULT_STATE.tenant));
+    }
+    appState.tariffs = { ...DEFAULT_STATE.tariffs, ...(appState.tariffs || {}) };
+
+    function isModuleAuthorized(modCode) {
+      if (!modCode) return true;
+      if (currentAuthUser?.role === 'SUPER_ADMIN') return true;
+      const raw = appState.tenant?.modules || 'NEURO,CLINICAL,PATHO,BIOCHEM';
+      const list = raw.split(',').map(m => m.trim().toUpperCase());
+      return list.includes(modCode.toUpperCase());
+    }
+
     let qrCodeInstance = null;
     let d1Connected = false;
 
@@ -2920,13 +3245,57 @@
       }
     }
 
+    function populateTemplatePresetSelect(selectElement) {
+      if (!selectElement) return;
+      let html = '';
+      if (isModuleAuthorized('NEURO')) {
+        html += `<optgroup label="🧠 Neuro Electrophysiology">
+          <option value="normal">NCS: Within Normal Limits</option>
+          <option value="ulnar">NCS: Left Ulnar Neuropathy</option>
+          <option value="cts">NCS: Bilateral Carpal Tunnel</option>
+          <option value="eeg_normal">EEG: Normal Awake & Sleep Record</option>
+          <option value="eeg_abnormal">EEG: Abnormal Video EEG Record</option>
+          <option value="emg_normal">EMG: Normal Concentric Needle Study</option>
+          <option value="rnst_normal">RNST: Normal Repetitive Nerve Stimulation</option>
+          <option value="vep_normal">VEP: Normal Pattern Reversal Visual Evoked</option>
+          <option value="bera_normal">BERA: Normal Brainstem Auditory Evoked</option>
+        </optgroup>`;
+      }
+      if (isModuleAuthorized('CLINICAL')) {
+        html += `<optgroup label="🧪 Clinical Lab & Microscopy">
+          <option value="urine_rm_normal">Urine R/M: Normal Examination</option>
+          <option value="urine_rm_uti">Urine R/M: Pyuria / UTI Profile</option>
+          <option value="stool_re_normal">Stool: Normal Routine Examination</option>
+          <option value="semen_normal">Semen: Normozoospermia Analysis</option>
+        </optgroup>`;
+      }
+      if (isModuleAuthorized('PATHO')) {
+        html += `<optgroup label="🩸 Pathology & Hematology">
+          <option value="cbc_normal">CBC: Normal Complete Hemogram</option>
+          <option value="cbc_anemia">CBC: Microcytic Hypochromic Anemia</option>
+          <option value="coag_normal">Coagulation: Normal PT / INR Profile</option>
+        </optgroup>`;
+      }
+      if (isModuleAuthorized('BIOCHEM')) {
+        html += `<optgroup label="⚗️ Clinical Biochemistry">
+          <option value="lft_normal">LFT: Normal Liver Function Profile</option>
+          <option value="lft_hepatitis">LFT: Acute Hepatitis / Transaminitis</option>
+          <option value="kft_normal">KFT: Normal Kidney Function & Electrolytes</option>
+          <option value="lipid_normal">Lipid: Desirable Complete Lipid Profile</option>
+          <option value="diabetic_normal">Sugar: Fasting, PP & HbA1c Profile</option>
+          <option value="thyroid_normal">Thyroid: Normal T3, T4, TSH Profile</option>
+        </optgroup>`;
+      }
+      selectElement.innerHTML = html;
+    }
+
     function renderIntakeForm() {
       const nextToken = appState.patients.length ? String(Math.max(...appState.patients.map(p => Number(p.token) || 1000)) + 1) : '1001';
       document.getElementById('in-token').value = nextToken;
       document.getElementById('in-date').value = new Date().toISOString().split('T')[0];
 
-      const modSelect = document.getElementById('in-modality');
-      modSelect.innerHTML = Object.values(appState.tariffs).map(t => `<option value="${t.code}">${t.code} — ${t.name}</option>`).join('');
+      populateModalitySelect(document.getElementById('in-modality'));
+      populateTemplatePresetSelect(document.getElementById('in-template-preset'));
 
       const quickSelect = document.getElementById('in-ref-quickpick');
       quickSelect.innerHTML = `<option value="">+ Quick Select Partner</option>` + (appState.referralPartners || []).map(rp => `<option value="${rp.name}">${rp.name} (${rp.type})</option>`).join('');
@@ -3071,6 +3440,266 @@
         sensoryFindings: "Reproducible Waves I, III, V identified. Wave I: 1.56 ms, Wave III: 3.70 ms, Wave V: 5.60 ms.",
         fwavesFindings: "Right I-V: 4.02 ms | Left I-V: 4.04 ms (Normal < 4.4 ms). Interaural Wave V difference: 0.04 ms (Normal < 0.3 ms).",
         impression: "Normal Bilateral Brainstem Evoked Response Audiometry (BERA) with intact retrocochlear and brainstem auditory pathways."
+      },
+      // CLINICAL LAB TEMPLATES
+      urine_rm_normal: {
+        reportTitle: "CLINICAL PATHOLOGY - URINE ROUTINE & MICROSCOPY",
+        module: "CLINICAL",
+        isLab: true,
+        labCategory: "CLINICAL PATHOLOGY",
+        labMethod: "Physical, Chemical & Automated Microscopic Examination",
+        labParams: [
+          { param: "Color", value: "Pale Yellow", unit: "-", refRange: "Pale Yellow", flag: "NORMAL" },
+          { param: "Appearance / Clarity", value: "Clear", unit: "-", refRange: "Clear", flag: "NORMAL" },
+          { param: "Specific Gravity", value: "1.015", unit: "-", refRange: "1.005 - 1.030", flag: "NORMAL" },
+          { param: "Reaction / pH", value: "6.0", unit: "-", refRange: "4.5 - 8.0", flag: "NORMAL" },
+          { param: "Protein / Albumin", value: "NIL", unit: "-", refRange: "NIL / Negative", flag: "NORMAL" },
+          { param: "Glucose / Sugar", value: "NIL", unit: "-", refRange: "NIL / Negative", flag: "NORMAL" },
+          { param: "Ketone Bodies", value: "Negative", unit: "-", refRange: "Negative", flag: "NORMAL" },
+          { param: "Bile Pigments / Salts", value: "Negative", unit: "-", refRange: "Negative", flag: "NORMAL" },
+          { param: "Pus Cells (WBC)", value: "1 - 2", unit: "/ HPF", refRange: "0 - 5 / HPF", flag: "NORMAL" },
+          { param: "Epithelial Cells", value: "2 - 3", unit: "/ HPF", refRange: "Occasional", flag: "NORMAL" },
+          { param: "Red Blood Cells (RBC)", value: "NIL", unit: "/ HPF", refRange: "0 - 2 / HPF", flag: "NORMAL" },
+          { param: "Casts & Crystals", value: "None Seen", unit: "-", refRange: "None Seen", flag: "NORMAL" },
+          { param: "Bacteria / Parasites", value: "Absent", unit: "-", refRange: "Absent", flag: "NORMAL" }
+        ],
+        notes: "Urine sample processed within 1 hour of collection. Midstream clean catch specimen.",
+        impression: "Urine Routine and Microscopic Examination within Normal Physiological Limits."
+      },
+      urine_rm_uti: {
+        reportTitle: "CLINICAL PATHOLOGY - URINE ROUTINE & MICROSCOPY",
+        module: "CLINICAL",
+        isLab: true,
+        labCategory: "CLINICAL PATHOLOGY",
+        labMethod: "Physical, Chemical & Microscopic Examination",
+        labParams: [
+          { param: "Color", value: "Deep Amber / Turbid", unit: "-", refRange: "Pale Yellow", flag: "HIGH" },
+          { param: "Appearance", value: "Cloudy / Hazy", unit: "-", refRange: "Clear", flag: "HIGH" },
+          { param: "Reaction / pH", value: "7.5", unit: "-", refRange: "4.5 - 8.0", flag: "NORMAL" },
+          { param: "Protein / Albumin", value: "Present (+)", unit: "-", refRange: "NIL / Negative", flag: "HIGH" },
+          { param: "Glucose / Sugar", value: "NIL", unit: "-", refRange: "NIL / Negative", flag: "NORMAL" },
+          { param: "Ketone Bodies", value: "Negative", unit: "-", refRange: "Negative", flag: "NORMAL" },
+          { param: "Nitrite", value: "Positive (+)", unit: "-", refRange: "Negative", flag: "HIGH" },
+          { param: "Pus Cells (WBC)", value: "25 - 30", unit: "/ HPF", refRange: "0 - 5 / HPF", flag: "HIGH" },
+          { param: "Epithelial Cells", value: "6 - 8", unit: "/ HPF", refRange: "Occasional", flag: "HIGH" },
+          { param: "Red Blood Cells (RBC)", value: "4 - 6", unit: "/ HPF", refRange: "0 - 2 / HPF", flag: "HIGH" },
+          { param: "Bacteria", value: "Abundant (+++)", unit: "-", refRange: "Absent", flag: "HIGH" }
+        ],
+        notes: "Microscopic findings demonstrate dense leukocyturia with WBC clumps and rod-shaped bacilli.",
+        impression: "Active Urinary Sediment with Pyuria, Microscopic Hematuria and Bacteriuria suggestive of Urinary Tract Infection (UTI). Urine Culture & Antimicrobial Sensitivity advised."
+      },
+      stool_re_normal: {
+        reportTitle: "CLINICAL PATHOLOGY - STOOL ROUTINE EXAMINATION",
+        module: "CLINICAL",
+        isLab: true,
+        labCategory: "CLINICAL PATHOLOGY",
+        labMethod: "Macroscopic & Microscopic Saline / Iodine Mount",
+        labParams: [
+          { param: "Color", value: "Brownish", unit: "-", refRange: "Brownish", flag: "NORMAL" },
+          { param: "Consistency", value: "Formed / Soft", unit: "-", refRange: "Formed", flag: "NORMAL" },
+          { param: "Mucus & Blood", value: "Absent", unit: "-", refRange: "Absent", flag: "NORMAL" },
+          { param: "Occult Blood Test", value: "Negative", unit: "-", refRange: "Negative", flag: "NORMAL" },
+          { param: "Pus Cells", value: "0 - 1", unit: "/ HPF", refRange: "0 - 2 / HPF", flag: "NORMAL" },
+          { param: "RBCs", value: "Nil", unit: "/ HPF", refRange: "Nil", flag: "NORMAL" },
+          { param: "Ova / Cysts / Trophozoites", value: "None Seen", unit: "-", refRange: "None Seen", flag: "NORMAL" }
+        ],
+        notes: "Saline and Lugol's iodine mounts examined under 10x and 40x objectives.",
+        impression: "Stool examination Within Normal Limits. No intestinal protozoa, helminthic ova or occult hemorrhage identified."
+      },
+      semen_normal: {
+        reportTitle: "CLINICAL PATHOLOGY - SEMEN FLUID ANALYSIS",
+        module: "CLINICAL",
+        isLab: true,
+        labCategory: "CLINICAL PATHOLOGY",
+        labMethod: "Manual & Phase Contrast Microscopy (WHO 6th Edition Manual)",
+        labParams: [
+          { param: "Ejaculate Volume", value: "3.2", unit: "mL", refRange: ">= 1.4 mL", flag: "NORMAL" },
+          { param: "Liquefaction Time", value: "25", unit: "minutes", refRange: "< 60 minutes", flag: "NORMAL" },
+          { param: "Semen pH", value: "7.6", unit: "-", refRange: "7.2 - 8.0", flag: "NORMAL" },
+          { param: "Sperm Concentration", value: "68.0", unit: "Million / mL", refRange: ">= 16.0 M/mL", flag: "NORMAL" },
+          { param: "Total Sperm Count", value: "217.6", unit: "Million / Ejaculate", refRange: ">= 39.0 Million", flag: "NORMAL" },
+          { param: "Total Motility (PR + NP)", value: "65", unit: "%", refRange: ">= 42 %", flag: "NORMAL" },
+          { param: "Progressive Motility (PR)", value: "54", unit: "%", refRange: ">= 30 %", flag: "NORMAL" },
+          { param: "Vitality / Viability", value: "76", unit: "%", refRange: ">= 54 %", flag: "NORMAL" },
+          { param: "Normal Forms (Morphology)", value: "6", unit: "%", refRange: ">= 4 % (Tygerberg strict)", flag: "NORMAL" }
+        ],
+        notes: "Abstinence period: 3 days. Specimen delivered within 30 minutes in a sterile container.",
+        impression: "Normozoospermia. Sperm concentration, progressive motility and normal morphology indices conform to WHO standards."
+      },
+      // PATHO LAB TEMPLATES
+      cbc_normal: {
+        reportTitle: "HEMATOLOGY & PATHOLOGY - COMPLETE BLOOD COUNT (CBC)",
+        module: "PATHO",
+        isLab: true,
+        labCategory: "HEMATOLOGY & PATHOLOGY",
+        labMethod: "5-Part Automated Laser Differential Analyzer & Peripheral Smear Verification",
+        labParams: [
+          { param: "Hemoglobin (Hb)", value: "14.2", unit: "g/dL", refRange: "13.0 - 17.0 (M) / 12.0 - 15.0 (F)", flag: "NORMAL" },
+          { param: "Total Leukocyte Count (TLC)", value: "7,400", unit: "/cu.mm", refRange: "4,000 - 11,000", flag: "NORMAL" },
+          { param: "Neutrophils", value: "62", unit: "%", refRange: "40 - 70", flag: "NORMAL" },
+          { param: "Lymphocytes", value: "30", unit: "%", refRange: "20 - 40", flag: "NORMAL" },
+          { param: "Monocytes", value: "5", unit: "%", refRange: "2 - 8", flag: "NORMAL" },
+          { param: "Eosinophils", value: "3", unit: "%", refRange: "1 - 6", flag: "NORMAL" },
+          { param: "Basophils", value: "0", unit: "%", refRange: "0 - 1", flag: "NORMAL" },
+          { param: "Platelet Count", value: "2.65", unit: "Lakhs /cu.mm", refRange: "1.50 - 4.50", flag: "NORMAL" },
+          { param: "Total RBC Count", value: "4.85", unit: "Million /cu.mm", refRange: "4.50 - 5.90", flag: "NORMAL" },
+          { param: "Packed Cell Volume (PCV)", value: "42.5", unit: "%", refRange: "40 - 50", flag: "NORMAL" },
+          { param: "Mean Corpuscular Volume (MCV)", value: "87.6", unit: "fL", refRange: "80 - 100", flag: "NORMAL" },
+          { param: "Mean Corpuscular Hb (MCH)", value: "29.3", unit: "pg", refRange: "27 - 33", flag: "NORMAL" },
+          { param: "Mean Corpuscular Hb Conc (MCHC)", value: "33.4", unit: "g/dL", refRange: "32 - 36", flag: "NORMAL" },
+          { param: "RDW - CV", value: "13.2", unit: "%", refRange: "11.5 - 14.5", flag: "NORMAL" },
+          { param: "Erythrocyte Sedimentation Rate (ESR)", value: "8", unit: "mm / 1st hr", refRange: "0 - 15 (M) / 0 - 20 (F)", flag: "NORMAL" }
+        ],
+        notes: "Peripheral Smear Examination: RBCs are predominantly normocytic and normochromic. WBCs show normal morphology and distribution. Platelets are adequate and morphologically normal. No hemoparasites or abnormal cells detected.",
+        impression: "Complete Blood Count and Peripheral Blood Smear are Within Normal Physiological Limits."
+      },
+      cbc_anemia: {
+        reportTitle: "HEMATOLOGY & PATHOLOGY - COMPLETE BLOOD COUNT (CBC)",
+        module: "PATHO",
+        isLab: true,
+        labCategory: "HEMATOLOGY & PATHOLOGY",
+        labMethod: "5-Part Automated Analyzer & Leishman-Stained Smear Review",
+        labParams: [
+          { param: "Hemoglobin (Hb)", value: "8.4", unit: "g/dL", refRange: "12.0 - 15.0", flag: "LOW" },
+          { param: "Total Leukocyte Count (TLC)", value: "6,800", unit: "/cu.mm", refRange: "4,000 - 11,000", flag: "NORMAL" },
+          { param: "Platelet Count", value: "2.90", unit: "Lakhs /cu.mm", refRange: "1.50 - 4.50", flag: "NORMAL" },
+          { param: "Total RBC Count", value: "3.55", unit: "Million /cu.mm", refRange: "4.00 - 5.20", flag: "LOW" },
+          { param: "Packed Cell Volume (PCV)", value: "27.2", unit: "%", refRange: "36 - 46", flag: "LOW" },
+          { param: "Mean Corpuscular Volume (MCV)", value: "68.4", unit: "fL", refRange: "80 - 100", flag: "LOW" },
+          { param: "Mean Corpuscular Hb (MCH)", value: "22.1", unit: "pg", refRange: "27 - 33", flag: "LOW" },
+          { param: "Mean Corpuscular Hb Conc (MCHC)", value: "29.8", unit: "g/dL", refRange: "32 - 36", flag: "LOW" },
+          { param: "RDW - CV", value: "18.2", unit: "%", refRange: "11.5 - 14.5", flag: "HIGH" },
+          { param: "ESR (Westergren)", value: "24", unit: "mm / 1st hr", refRange: "0 - 20", flag: "HIGH" }
+        ],
+        notes: "Peripheral Smear Findings: RBCs reveal marked microcytosis and hypochromia. Anisopoikilocytosis present with pencil cells and occasional target cells. No blast cells seen.",
+        impression: "Microcytic Hypochromic Anemia, moderate severity, morphologically indicative of Iron Deficiency Anemia. Iron profile (Serum Ferritin, Iron, TIBC) recommended."
+      },
+      coag_normal: {
+        reportTitle: "HEMATOLOGY & PATHOLOGY - COAGULATION PROFILE",
+        module: "PATHO",
+        isLab: true,
+        labCategory: "HEMATOLOGY & PATHOLOGY",
+        labMethod: "Photo-Optical Clot Detection & Automated Coagulometer",
+        labParams: [
+          { param: "Prothrombin Time (PT) Test", value: "12.4", unit: "seconds", refRange: "11.0 - 14.5", flag: "NORMAL" },
+          { param: "PT Control", value: "12.0", unit: "seconds", refRange: "-", flag: "NORMAL" },
+          { param: "INR (International Normalized Ratio)", value: "1.03", unit: "-", refRange: "0.85 - 1.15", flag: "NORMAL" },
+          { param: "Activated Partial Thromboplastin Time (APTT)", value: "30.5", unit: "seconds", refRange: "26.0 - 38.0", flag: "NORMAL" },
+          { param: "APTT Control", value: "29.0", unit: "seconds", refRange: "-", flag: "NORMAL" },
+          { param: "Bleeding Time (BT)", value: "2 min 15 sec", unit: "-", refRange: "1 - 5 mins", flag: "NORMAL" },
+          { param: "Clotting Time (CT)", value: "6 min 30 sec", unit: "-", refRange: "5 - 11 mins", flag: "NORMAL" }
+        ],
+        notes: "Citrated platelet-poor plasma analyzed at 37°C within 2 hours of phlebotomy.",
+        impression: "Coagulation profile Within Normal Limits. Preserved extrinsic and intrinsic coagulation pathways."
+      },
+      // BIOCHEMISTRY TEMPLATES
+      lft_normal: {
+        reportTitle: "CLINICAL BIOCHEMISTRY - LIVER FUNCTION TEST (LFT)",
+        module: "BIOCHEM",
+        isLab: true,
+        labCategory: "CLINICAL BIOCHEMISTRY",
+        labMethod: "Fully Automated Clinical Chemistry Analyzer (Spectrophotometric / Diazonium)",
+        labParams: [
+          { param: "Serum Bilirubin (Total)", value: "0.85", unit: "mg/dL", refRange: "0.2 - 1.2", flag: "NORMAL" },
+          { param: "Serum Bilirubin (Direct / Conjugated)", value: "0.22", unit: "mg/dL", refRange: "0.0 - 0.3", flag: "NORMAL" },
+          { param: "Serum Bilirubin (Indirect / Unconjugated)", value: "0.63", unit: "mg/dL", refRange: "0.1 - 0.9", flag: "NORMAL" },
+          { param: "SGOT / AST", value: "26", unit: "U/L", refRange: "5 - 40", flag: "NORMAL" },
+          { param: "SGPT / ALT", value: "28", unit: "U/L", refRange: "7 - 56", flag: "NORMAL" },
+          { param: "Alkaline Phosphatase (ALP)", value: "88", unit: "U/L", refRange: "44 - 147", flag: "NORMAL" },
+          { param: "Total Serum Protein", value: "7.4", unit: "g/dL", refRange: "6.0 - 8.3", flag: "NORMAL" },
+          { param: "Serum Albumin", value: "4.5", unit: "g/dL", refRange: "3.5 - 5.2", flag: "NORMAL" },
+          { param: "Serum Globulin", value: "2.9", unit: "g/dL", refRange: "2.0 - 3.5", flag: "NORMAL" },
+          { param: "Albumin / Globulin (A:G) Ratio", value: "1.55", unit: "-", refRange: "1.1 - 2.2", flag: "NORMAL" },
+          { param: "Gamma Glutamyl Transferase (GGT)", value: "24", unit: "U/L", refRange: "9 - 48", flag: "NORMAL" }
+        ],
+        notes: "Enzymatic rates measured at 37°C. Hemolysis and lipemia indices negative.",
+        impression: "Liver Function Test Profile is Within Normal Physiological Biological Reference Intervals."
+      },
+      lft_hepatitis: {
+        reportTitle: "CLINICAL BIOCHEMISTRY - LIVER FUNCTION TEST (LFT)",
+        module: "BIOCHEM",
+        isLab: true,
+        labCategory: "CLINICAL BIOCHEMISTRY",
+        labMethod: "Fully Automated Clinical Chemistry Analyzer",
+        labParams: [
+          { param: "Serum Bilirubin (Total)", value: "4.60", unit: "mg/dL", refRange: "0.2 - 1.2", flag: "HIGH" },
+          { param: "Serum Bilirubin (Direct)", value: "3.10", unit: "mg/dL", refRange: "0.0 - 0.3", flag: "HIGH" },
+          { param: "Serum Bilirubin (Indirect)", value: "1.50", unit: "mg/dL", refRange: "0.1 - 0.9", flag: "HIGH" },
+          { param: "SGOT / AST", value: "325", unit: "U/L", refRange: "5 - 40", flag: "HIGH" },
+          { param: "SGPT / ALT", value: "460", unit: "U/L", refRange: "7 - 56", flag: "HIGH" },
+          { param: "Alkaline Phosphatase (ALP)", value: "195", unit: "U/L", refRange: "44 - 147", flag: "HIGH" },
+          { param: "Total Serum Protein", value: "6.7", unit: "g/dL", refRange: "6.0 - 8.3", flag: "NORMAL" },
+          { param: "Serum Albumin", value: "3.6", unit: "g/dL", refRange: "3.5 - 5.2", flag: "NORMAL" },
+          { param: "A:G Ratio", value: "1.16", unit: "-", refRange: "1.1 - 2.2", flag: "NORMAL" }
+        ],
+        notes: "Marked transaminitis exceeding 10x upper limit of normal. Cholestatic markers mildly elevated.",
+        impression: "Acute Hepatocellular Injury pattern with significant transaminitis and conjugated hyperbilirubinemia. Viral Hepatitis serology (HBsAg, Anti-HCV, HAV, HEV) and Hepatobiliary Ultrasound indicated."
+      },
+      kft_normal: {
+        reportTitle: "CLINICAL BIOCHEMISTRY - KIDNEY FUNCTION TEST (KFT / RFT)",
+        module: "BIOCHEM",
+        isLab: true,
+        labCategory: "CLINICAL BIOCHEMISTRY",
+        labMethod: "Kinetic Urease / Enzymatic / Ion-Selective Electrode (ISE)",
+        labParams: [
+          { param: "Blood Urea", value: "24.5", unit: "mg/dL", refRange: "15 - 45", flag: "NORMAL" },
+          { param: "Blood Urea Nitrogen (BUN)", value: "11.4", unit: "mg/dL", refRange: "7 - 20", flag: "NORMAL" },
+          { param: "Serum Creatinine", value: "0.92", unit: "mg/dL", refRange: "0.7 - 1.3 (M) / 0.6 - 1.1 (F)", flag: "NORMAL" },
+          { param: "Serum Uric Acid", value: "5.1", unit: "mg/dL", refRange: "3.5 - 7.2", flag: "NORMAL" },
+          { param: "Serum Sodium (Na+)", value: "139.0", unit: "mEq/L", refRange: "135 - 145", flag: "NORMAL" },
+          { param: "Serum Potassium (K+)", value: "4.30", unit: "mEq/L", refRange: "3.5 - 5.1", flag: "NORMAL" },
+          { param: "Serum Chloride (Cl-)", value: "101.5", unit: "mEq/L", refRange: "96 - 106", flag: "NORMAL" },
+          { param: "eGFR (CKD-EPI)", value: "> 90", unit: "mL/min/1.73m²", refRange: "> 90 Normal", flag: "NORMAL" }
+        ],
+        notes: "Serum Creatinine calibrated against IDMS standardized reference method.",
+        impression: "Renal Function Parameters, glomerular filtration and serum electrolytes are Within Normal Limits."
+      },
+      lipid_normal: {
+        reportTitle: "CLINICAL BIOCHEMISTRY - COMPLETE LIPID PROFILE",
+        module: "BIOCHEM",
+        isLab: true,
+        labCategory: "CLINICAL BIOCHEMISTRY",
+        labMethod: "Automated Enzymatic Colorimetric Endpoint (CHOD-PAP / GPO-PAP)",
+        labParams: [
+          { param: "Total Serum Cholesterol", value: "168", unit: "mg/dL", refRange: "< 200 Desirable", flag: "NORMAL" },
+          { param: "Serum Triglycerides", value: "122", unit: "mg/dL", refRange: "< 150 Normal", flag: "NORMAL" },
+          { param: "HDL Cholesterol (Good)", value: "48", unit: "mg/dL", refRange: "> 40 (M) / > 50 (F)", flag: "NORMAL" },
+          { param: "LDL Cholesterol (Bad)", value: "95", unit: "mg/dL", refRange: "< 100 Optimal", flag: "NORMAL" },
+          { param: "VLDL Cholesterol", value: "24.4", unit: "mg/dL", refRange: "15 - 30", flag: "NORMAL" },
+          { param: "Total Cholesterol / HDL Ratio", value: "3.50", unit: "-", refRange: "< 4.5 Desirable", flag: "NORMAL" },
+          { param: "LDL / HDL Ratio", value: "1.98", unit: "-", refRange: "< 3.0 Desirable", flag: "NORMAL" }
+        ],
+        notes: "Patient reported 12 hours overnight fasting prior to venous blood sampling.",
+        impression: "Lipid Profile Within Desirable Cardiovascular Biological Target Ranges."
+      },
+      diabetic_normal: {
+        reportTitle: "CLINICAL BIOCHEMISTRY - GLUCOSE METABOLISM & HBA1C PROFILE",
+        module: "BIOCHEM",
+        isLab: true,
+        labCategory: "CLINICAL BIOCHEMISTRY",
+        labMethod: "HPLC (High Performance Liquid Chromatography) / Hexokinase",
+        labParams: [
+          { param: "Fasting Blood Sugar (FBS)", value: "88", unit: "mg/dL", refRange: "70 - 100 Normal | 100-125 Impaired", flag: "NORMAL" },
+          { param: "Post Prandial Blood Sugar (PPBS)", value: "124", unit: "mg/dL", refRange: "< 140 Normal | 140-199 Impaired", flag: "NORMAL" },
+          { param: "Glycated Hemoglobin (HbA1c)", value: "5.4", unit: "%", refRange: "< 5.7 Normal | 5.7-6.4 Prediabetic | >= 6.5 Diabetic", flag: "NORMAL" },
+          { param: "Estimated Average Glucose (eAG)", value: "108", unit: "mg/dL", refRange: "Approximate mean glycemic level", flag: "NORMAL" }
+        ],
+        notes: "HbA1c standardized according to NGSP / IFCC certification.",
+        impression: "Euglycemic Profile. Normal Glycated Hemoglobin (HbA1c) and plasma glucose indices with no evidence of impaired glucose tolerance."
+      },
+      thyroid_normal: {
+        reportTitle: "CLINICAL BIOCHEMISTRY - THYROID FUNCTION PROFILE (TFT)",
+        module: "BIOCHEM",
+        isLab: true,
+        labCategory: "CLINICAL BIOCHEMISTRY",
+        labMethod: "Chemiluminescence Immunoassay (CLIA)",
+        labParams: [
+          { param: "Total Triiodothyronine (T3)", value: "1.25", unit: "ng/mL", refRange: "0.80 - 2.00", flag: "NORMAL" },
+          { param: "Total Thyroxine (T4)", value: "8.40", unit: "ug/dL", refRange: "5.10 - 14.10", flag: "NORMAL" },
+          { param: "Thyroid Stimulating Hormone (TSH)", value: "2.15", unit: "uIU/mL", refRange: "0.40 - 4.50", flag: "NORMAL" }
+        ],
+        notes: "Sample free of heterophilic antibody interference. Third generation high sensitivity TSH assay.",
+        impression: "Euthyroid State. Normal circulating thyroid hormone concentrations and pituitary feedback control."
       }
     };
 
@@ -3086,6 +3715,16 @@
         else if (modality === 'RNST') presetSelect.value = 'rnst_normal';
         else if (modality === 'VEP') presetSelect.value = 'vep_normal';
         else if (modality === 'BERA') presetSelect.value = 'bera_normal';
+        else if (modality === 'URINE_RM') presetSelect.value = 'urine_rm_normal';
+        else if (modality === 'STOOL_RE') presetSelect.value = 'stool_re_normal';
+        else if (modality === 'SEMEN_ANALYSIS') presetSelect.value = 'semen_normal';
+        else if (modality === 'CBC' || modality === 'PBS') presetSelect.value = 'cbc_normal';
+        else if (modality === 'COAG_PROFILE' || modality === 'BT_CT') presetSelect.value = 'coag_normal';
+        else if (modality === 'LFT') presetSelect.value = 'lft_normal';
+        else if (modality === 'KFT') presetSelect.value = 'kft_normal';
+        else if (modality === 'LIPID') presetSelect.value = 'lipid_normal';
+        else if (modality === 'BLOOD_SUGAR' || modality === 'HBA1C') presetSelect.value = 'diabetic_normal';
+        else if (modality === 'THYROID_PROFILE') presetSelect.value = 'thyroid_normal';
         else presetSelect.value = 'normal';
       }
 
@@ -3303,8 +3942,7 @@
     function openPatientModal(id = null) {
       const modal = document.getElementById('patientModal');
       const title = document.getElementById('patientModalTitle');
-      const modSelect = document.getElementById('modal-modality');
-      modSelect.innerHTML = Object.values(appState.tariffs).map(t => `<option value="${t.code}">${t.code} — ${t.name}</option>`).join('');
+      populateModalitySelect(document.getElementById('modal-modality'));
 
       const docSelect = document.getElementById('modal-reporting-doctor');
       docSelect.innerHTML = (appState.reportingDoctors || []).map(d => `<option value="${d.name}">${d.name}</option>`).join('');
@@ -3609,9 +4247,16 @@
 
       tbody.innerHTML = Object.values(appState.tariffs).map(t => {
         const net = (Number(t.fee) || 0) - (Number(t.docShare) || 0) - (Number(t.refShare) || 0);
+        const mod = t.module || MODALITY_MODULE_MAP[t.code] || 'NEURO';
+        const modBadge = mod === 'NEURO' ? '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">NEURO</span>'
+          : (mod === 'CLINICAL' ? '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">CLINICAL</span>'
+          : (mod === 'PATHO' ? '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">PATHO</span>'
+          : '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300">BIOCHEM</span>'));
+
         return `
           <tr class="hover:bg-slate-50">
-            <td class="py-3 px-3 font-bold text-brand-600">${t.code}</td>
+            <td class="py-3 px-3 font-bold text-brand-600 font-mono">${t.code}</td>
+            <td class="py-3 px-3">${modBadge}</td>
             <td class="py-3 px-3 font-semibold text-slate-800">${t.name}</td>
             <td class="py-3 px-3 text-right"><input type="number" id="rc-fee-${t.code}" value="${t.fee}" class="w-24 text-right font-mono font-bold bg-slate-50 border rounded px-2 py-1" /></td>
             <td class="py-3 px-3 text-right text-amber-700"><input type="number" id="rc-doc-${t.code}" value="${t.docShare}" class="w-24 text-right font-mono font-bold bg-slate-50 border rounded px-2 py-1" /></td>
@@ -3659,51 +4304,221 @@
       loadPatientIntoWriter(appState.selectedPatientForReport);
     }
 
+    function renderWriterLabTable(params = []) {
+      const tbody = document.getElementById('writer-lab-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = params.map((p, idx) => `
+        <tr class="hover:bg-white/80 transition" data-idx="${idx}">
+          <td class="p-1.5"><input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 font-bold text-slate-800 lab-param-name" value="${escapeHtml(p.param || '')}" /></td>
+          <td class="p-1.5 text-center"><input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-center font-mono font-bold text-slate-900 lab-param-val" value="${escapeHtml(p.value || '')}" /></td>
+          <td class="p-1.5 text-center"><input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-center font-mono text-slate-600 text-[11px] lab-param-unit" value="${escapeHtml(p.unit || '')}" /></td>
+          <td class="p-1.5 text-center"><input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-center font-mono text-slate-600 text-[11px] lab-param-ref" value="${escapeHtml(p.refRange || '')}" /></td>
+          <td class="p-1.5 text-center">
+            <select class="w-full bg-white border border-slate-300 rounded px-1.5 py-1 text-center font-bold text-[11px] lab-param-flag">
+              <option value="NORMAL" ${p.flag === 'NORMAL' ? 'selected' : ''}>NORMAL</option>
+              <option value="HIGH" ${p.flag === 'HIGH' ? 'selected' : ''}>HIGH ↑</option>
+              <option value="LOW" ${p.flag === 'LOW' ? 'selected' : ''}>LOW ↓</option>
+            </select>
+          </td>
+          <td class="p-1.5 text-center">
+            <button type="button" onclick="deleteWriterLabParamRow(${idx})" class="text-rose-500 hover:text-rose-700 font-bold text-sm" title="Remove parameter">×</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function addWriterLabParamRow(param = '', val = '', unit = '', refRange = '', flag = 'NORMAL') {
+      const current = collectWriterLabRows();
+      current.push({ param, value: val, unit, refRange, flag });
+      renderWriterLabTable(current);
+    }
+
+    function deleteWriterLabParamRow(idx) {
+      const current = collectWriterLabRows();
+      current.splice(idx, 1);
+      renderWriterLabTable(current);
+    }
+
+    function collectWriterLabRows() {
+      const tbody = document.getElementById('writer-lab-tbody');
+      if (!tbody) return [];
+      const rows = [];
+      tbody.querySelectorAll('tr').forEach(tr => {
+        const param = tr.querySelector('.lab-param-name')?.value.trim();
+        const value = tr.querySelector('.lab-param-val')?.value.trim();
+        const unit = tr.querySelector('.lab-param-unit')?.value.trim();
+        const refRange = tr.querySelector('.lab-param-ref')?.value.trim();
+        const flag = tr.querySelector('.lab-param-flag')?.value || 'NORMAL';
+        if (param || value) {
+          rows.push({ param, value, unit, refRange, flag });
+        }
+      });
+      return rows;
+    }
+
+    function filterWriterPresets(filterMod) {
+      document.querySelectorAll('.preset-filter-btn').forEach(btn => {
+        if (btn.dataset.mod === filterMod) {
+          btn.className = 'preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-white';
+        } else {
+          btn.className = 'preset-filter-btn px-2.5 py-1 rounded-lg font-bold bg-white text-slate-700 hover:bg-slate-200 border border-slate-300';
+        }
+      });
+
+      document.querySelectorAll('.preset-pill').forEach(pill => {
+        const mod = pill.dataset.module;
+        if (!isModuleAuthorized(mod)) {
+          pill.style.display = 'none';
+          return;
+        }
+        if (filterMod === 'ALL' || filterMod === mod) {
+          pill.style.display = 'inline-block';
+        } else {
+          pill.style.display = 'none';
+        }
+      });
+    }
+
+    function updateWriterPresetsVisibility() {
+      document.querySelectorAll('.preset-filter-btn').forEach(btn => {
+        const mod = btn.dataset.mod;
+        if (mod !== 'ALL' && !isModuleAuthorized(mod)) {
+          btn.style.display = 'none';
+        } else {
+          btn.style.display = 'inline-block';
+        }
+      });
+      filterWriterPresets('ALL');
+    }
+
+    function populateModalitySelect(selectElement, selectedValue = null) {
+      if (!selectElement) return;
+      const authorizedTariffs = Object.values(appState.tariffs).filter(t => {
+        const modGroup = t.module || MODALITY_MODULE_MAP[t.code] || 'NEURO';
+        return isModuleAuthorized(modGroup);
+      });
+
+      const groups = {
+        NEURO: { label: '🧠 Neuro Electrophysiology', items: [] },
+        CLINICAL: { label: '🧪 Clinical Lab & Microscopy', items: [] },
+        PATHO: { label: '🩸 Pathology & Hematology', items: [] },
+        BIOCHEM: { label: '⚗️ Clinical Biochemistry', items: [] }
+      };
+
+      authorizedTariffs.forEach(t => {
+        const g = t.module || MODALITY_MODULE_MAP[t.code] || 'NEURO';
+        if (groups[g]) groups[g].items.push(t);
+        else groups.NEURO.items.push(t);
+      });
+
+      let html = '';
+      for (const [key, grp] of Object.entries(groups)) {
+        if (grp.items.length) {
+          html += `<optgroup label="${grp.label}">`;
+          html += grp.items.map(t => `<option value="${t.code}">${t.code} — ${t.name}</option>`).join('');
+          html += `</optgroup>`;
+        }
+      }
+      selectElement.innerHTML = html || Object.values(appState.tariffs).map(t => `<option value="${t.code}">${t.code} — ${t.name}</option>`).join('');
+      if (selectedValue) selectElement.value = selectedValue;
+    }
+
     function loadPatientIntoWriter(id) {
       const p = appState.patients.find(x => x.id === id);
       if (!p) return;
       appState.selectedPatientForReport = id;
 
-      document.getElementById('writer-title').value = p.reportTitle || (p.modality === 'EEG' ? 'EEG REPORT' : 'NERVE CONDUCTION STUDIES REPORT');
-      if (document.getElementById('writer-technician')) document.getElementById('writer-technician').value = p.technician || 'Mr Murtaza Amin';
-      document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
-      document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
-      document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
-      document.getElementById('lbl-writer-sec2').innerText = p.lblSec2 || "SENSORY FINDINGS (Latency, Amplitude, CV):";
-      document.getElementById('lbl-writer-sec3').innerText = p.lblSec3 || "F-WAVES:";
+      updateWriterPresetsVisibility();
 
-      document.getElementById('writer-motor-sampled').value = p.motorSampled || "Bilateral Median and Ulnar nerves.";
-      document.getElementById('writer-sensory-sampled').value = p.sensorySampled || "Bilateral Median and Ulnar nerves.";
-      document.getElementById('writer-motor-findings').value = p.motorFindings || "Normal DML, CMAP and CV.";
-      document.getElementById('writer-sensory-findings').value = p.sensoryFindings || "Normal Latency, Amplitude and CV.";
-      document.getElementById('writer-fwaves-findings').value = p.fwavesFindings || "Normal minimum Latencies.";
-      document.getElementById('writer-impression').value = p.impression || "EPS of sampled nerves is Within Normal Limits.";
+      document.getElementById('writer-title').value = p.reportTitle || (p.modality === 'EEG' ? 'EEG REPORT' : (p.isLab ? (p.modality + ' REPORT') : 'NERVE CONDUCTION STUDIES REPORT'));
+      if (document.getElementById('writer-technician')) document.getElementById('writer-technician').value = p.technician || 'Mr Murtaza Amin';
+
+      const isLab = !!p.isLab || (Array.isArray(p.labResults) && p.labResults.length > 0);
+      const neuroBox = document.getElementById('writer-neuro-fields');
+      const labBox = document.getElementById('writer-lab-fields');
+
+      if (isLab) {
+        if (neuroBox) neuroBox.style.display = 'none';
+        if (labBox) labBox.style.display = 'block';
+        renderWriterLabTable(p.labResults || []);
+        if (document.getElementById('writer-lab-notes')) {
+          document.getElementById('writer-lab-notes').value = p.labNotes || p.motorFindings || '';
+        }
+      } else {
+        if (neuroBox) neuroBox.style.display = 'block';
+        if (labBox) labBox.style.display = 'none';
+
+        document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
+        document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Sensory Nerves Sampled:";
+        document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "MOTOR FINDINGS (DML, CMAP, CV):";
+        document.getElementById('lbl-writer-sec2').innerText = p.lblSec2 || "SENSORY FINDINGS (Latency, Amplitude, CV):";
+        document.getElementById('lbl-writer-sec3').innerText = p.lblSec3 || "F-WAVES:";
+
+        document.getElementById('writer-motor-sampled').value = p.motorSampled || "Bilateral Median and Ulnar nerves.";
+        document.getElementById('writer-sensory-sampled').value = p.sensorySampled || "Bilateral Median and Ulnar nerves.";
+        document.getElementById('writer-motor-findings').value = p.motorFindings || "Normal DML, CMAP and CV.";
+        document.getElementById('writer-sensory-findings').value = p.sensoryFindings || "Normal Latency, Amplitude and CV.";
+        document.getElementById('writer-fwaves-findings').value = p.fwavesFindings || "Normal minimum Latencies.";
+      }
+      document.getElementById('writer-impression').value = p.impression || "Findings within normal limits.";
     }
 
     function loadNcsTemplate(type) {
       const tpl = MODALITY_TEMPLATES[type] || MODALITY_TEMPLATES.normal;
       const p = appState.patients.find(x => x.id === appState.selectedPatientForReport);
 
-      document.getElementById('writer-title').value = tpl.reportTitle;
-      document.getElementById('lbl-writer-param1').innerText = tpl.lblParam1;
-      document.getElementById('lbl-writer-param2').innerText = tpl.lblParam2;
-      document.getElementById('lbl-writer-sec1').innerText = tpl.lblSec1;
-      document.getElementById('lbl-writer-sec2').innerText = tpl.lblSec2;
-      document.getElementById('lbl-writer-sec3').innerText = tpl.lblSec3;
+      const mod = tpl.module || 'NEURO';
+      if (!isModuleAuthorized(mod)) {
+        showToast(`Access Restricted: ${mod} Laboratory module is not authorized for your clinic. Contact SpringNexa Super Admin.`, 'error');
+        return;
+      }
 
-      document.getElementById('writer-motor-sampled').value = tpl.motorSampled;
-      document.getElementById('writer-sensory-sampled').value = tpl.sensorySampled;
-      document.getElementById('writer-motor-findings').value = tpl.motorFindings;
-      document.getElementById('writer-sensory-findings').value = tpl.sensoryFindings;
-      document.getElementById('writer-fwaves-findings').value = tpl.fwavesFindings;
-      document.getElementById('writer-impression').value = tpl.impression;
+      document.getElementById('writer-title').value = tpl.reportTitle;
+
+      const neuroBox = document.getElementById('writer-neuro-fields');
+      const labBox = document.getElementById('writer-lab-fields');
+
+      if (tpl.isLab) {
+        if (neuroBox) neuroBox.style.display = 'none';
+        if (labBox) labBox.style.display = 'block';
+
+        renderWriterLabTable(tpl.labParams || []);
+        if (document.getElementById('writer-lab-notes')) {
+          document.getElementById('writer-lab-notes').value = tpl.notes || '';
+        }
+        document.getElementById('writer-impression').value = tpl.impression || '';
+      } else {
+        if (neuroBox) neuroBox.style.display = 'block';
+        if (labBox) labBox.style.display = 'none';
+
+        document.getElementById('lbl-writer-param1').innerText = tpl.lblParam1 || "Motor Nerves Sampled:";
+        document.getElementById('lbl-writer-param2').innerText = tpl.lblParam2 || "Sensory Nerves Sampled:";
+        document.getElementById('lbl-writer-sec1').innerText = tpl.lblSec1 || "MOTOR FINDINGS:";
+        document.getElementById('lbl-writer-sec2').innerText = tpl.lblSec2 || "SENSORY FINDINGS:";
+        document.getElementById('lbl-writer-sec3').innerText = tpl.lblSec3 || "F-WAVES:";
+
+        document.getElementById('writer-motor-sampled').value = tpl.motorSampled || '';
+        document.getElementById('writer-sensory-sampled').value = tpl.sensorySampled || '';
+        document.getElementById('writer-motor-findings').value = tpl.motorFindings || '';
+        document.getElementById('writer-sensory-findings').value = tpl.sensoryFindings || '';
+        document.getElementById('writer-fwaves-findings').value = tpl.fwavesFindings || '';
+        document.getElementById('writer-impression').value = tpl.impression || '';
+      }
 
       if (p) {
-        p.lblParam1 = tpl.lblParam1;
-        p.lblParam2 = tpl.lblParam2;
-        p.lblSec1 = tpl.lblSec1;
-        p.lblSec2 = tpl.lblSec2;
-        p.lblSec3 = tpl.lblSec3;
+        p.isLab = !!tpl.isLab;
+        p.labMethod = tpl.labMethod || '';
+        p.labCategory = tpl.labCategory || '';
+        if (tpl.isLab) {
+          p.labResults = JSON.parse(JSON.stringify(tpl.labParams || []));
+          p.labNotes = tpl.notes || '';
+        } else {
+          p.lblParam1 = tpl.lblParam1;
+          p.lblParam2 = tpl.lblParam2;
+          p.lblSec1 = tpl.lblSec1;
+          p.lblSec2 = tpl.lblSec2;
+          p.lblSec3 = tpl.lblSec3;
+        }
       }
 
       showToast(`Loaded '${tpl.reportTitle}' clinical template!`);
@@ -3716,17 +4531,27 @@
 
       p.reportTitle = document.getElementById('writer-title').value;
       if (document.getElementById('writer-technician')) p.technician = document.getElementById('writer-technician').value.trim() || 'Mr Murtaza Amin';
-      p.lblParam1 = document.getElementById('lbl-writer-param1').innerText;
-      p.lblParam2 = document.getElementById('lbl-writer-param2').innerText;
-      p.lblSec1 = document.getElementById('lbl-writer-sec1').innerText;
-      p.lblSec2 = document.getElementById('lbl-writer-sec2').innerText;
-      p.lblSec3 = document.getElementById('lbl-writer-sec3').innerText;
 
-      p.motorSampled = document.getElementById('writer-motor-sampled').value;
-      p.sensorySampled = document.getElementById('writer-sensory-sampled').value;
-      p.motorFindings = document.getElementById('writer-motor-findings').value;
-      p.sensoryFindings = document.getElementById('writer-sensory-findings').value;
-      p.fwavesFindings = document.getElementById('writer-fwaves-findings').value;
+      const isLabMode = document.getElementById('writer-lab-fields') && document.getElementById('writer-lab-fields').style.display !== 'none';
+      if (isLabMode) {
+        p.isLab = true;
+        p.labResults = collectWriterLabRows();
+        p.labNotes = document.getElementById('writer-lab-notes') ? document.getElementById('writer-lab-notes').value : '';
+      } else {
+        p.isLab = false;
+        p.lblParam1 = document.getElementById('lbl-writer-param1').innerText;
+        p.lblParam2 = document.getElementById('lbl-writer-param2').innerText;
+        p.lblSec1 = document.getElementById('lbl-writer-sec1').innerText;
+        p.lblSec2 = document.getElementById('lbl-writer-sec2').innerText;
+        p.lblSec3 = document.getElementById('lbl-writer-sec3').innerText;
+
+        p.motorSampled = document.getElementById('writer-motor-sampled').value;
+        p.sensorySampled = document.getElementById('writer-sensory-sampled').value;
+        p.motorFindings = document.getElementById('writer-motor-findings').value;
+        p.sensoryFindings = document.getElementById('writer-sensory-findings').value;
+        p.fwavesFindings = document.getElementById('writer-fwaves-findings').value;
+      }
+
       p.impression = document.getElementById('writer-impression').value;
 
       saveState();
@@ -3825,11 +4650,62 @@
       if (document.getElementById('rep-patient-address')) document.getElementById('rep-patient-address').innerText = p.address || 'Okay Kulgam';
       if (document.getElementById('rep-patient-technician')) document.getElementById('rep-patient-technician').innerText = p.technician || 'Mr Murtaza Amin';
 
-      const isEeg = (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG'));
+      const isLab = !!p.isLab || (Array.isArray(p.labResults) && p.labResults.length > 0);
+      const isEeg = (!isLab && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
       const eegBox = document.getElementById('rep-eeg-container');
       const ncsBox = document.getElementById('rep-ncs-container');
+      const labBox = document.getElementById('rep-lab-container');
 
-      if (isEeg) {
+      if (isLab) {
+        if (labBox) labBox.style.display = 'block';
+        if (eegBox) eegBox.style.display = 'none';
+        if (ncsBox) ncsBox.style.display = 'none';
+
+        if (document.getElementById('rep-lab-doc-title')) {
+          document.getElementById('rep-lab-doc-title').innerText = p.reportTitle || "CLINICAL LABORATORY INVESTIGATION REPORT";
+        }
+        if (document.getElementById('rep-lab-method-sub')) {
+          document.getElementById('rep-lab-method-sub').innerText = p.labMethod ? `Method / Technique: ${p.labMethod}` : '';
+        }
+
+        const tbody = document.getElementById('rep-lab-tbody');
+        if (tbody) {
+          const results = Array.isArray(p.labResults) ? p.labResults : [];
+          tbody.innerHTML = results.map(row => {
+            const flag = String(row.flag || 'NORMAL').toUpperCase();
+            const flagBadge = flag === 'HIGH'
+              ? `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300">HIGH ↑</span>`
+              : (flag === 'LOW'
+                ? `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">LOW ↓</span>`
+                : `<span class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-500">NORMAL</span>`);
+
+            const isAbnormal = (flag === 'HIGH' || flag === 'LOW');
+            return `
+              <tr class="${isAbnormal ? 'bg-amber-50/40 font-bold' : ''}">
+                <td class="border border-slate-900 px-3 py-1.5 text-slate-900 ${isAbnormal ? 'font-black' : 'font-semibold'}">${escapeHtml(row.param || '-')}</td>
+                <td class="border border-slate-900 px-3 py-1.5 text-center font-mono ${isAbnormal ? 'font-black text-slate-950 text-xs' : 'font-bold text-slate-800'}">${escapeHtml(row.value || '-')}</td>
+                <td class="border border-slate-900 px-3 py-1.5 text-center text-slate-600 font-mono text-[11px]">${escapeHtml(row.unit || '-')}</td>
+                <td class="border border-slate-900 px-3 py-1.5 text-center text-slate-600 font-mono text-[11px]">${escapeHtml(row.refRange || '-')}</td>
+                <td class="border border-slate-900 px-3 py-1.5 text-center">${flagBadge}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        const notesBox = document.getElementById('rep-lab-notes-box');
+        const notesText = document.getElementById('rep-lab-notes-text');
+        if (p.labNotes || p.motorFindings) {
+          if (notesBox) notesBox.style.display = 'block';
+          if (notesText) notesText.innerText = p.labNotes || p.motorFindings;
+        } else {
+          if (notesBox) notesBox.style.display = 'none';
+        }
+
+        if (document.getElementById('rep-lab-impression-text')) {
+          document.getElementById('rep-lab-impression-text').innerText = p.impression || "Investigation findings within normal biological reference intervals.";
+        }
+      } else if (isEeg) {
+        if (labBox) labBox.style.display = 'none';
         if (eegBox) eegBox.style.display = 'block';
         if (ncsBox) ncsBox.style.display = 'none';
 
@@ -3844,6 +4720,7 @@
         }
         if (document.getElementById('rep-eeg-impression-text')) document.getElementById('rep-eeg-impression-text').innerText = p.impression || "Normal Sleep and awake EEG Record";
       } else {
+        if (labBox) labBox.style.display = 'none';
         if (eegBox) eegBox.style.display = 'none';
         if (ncsBox) ncsBox.style.display = 'block';
 
@@ -4811,12 +5688,23 @@
       if (adminEl) adminEl.innerText = adminCount;
     }
 
+    function renderModuleBadges(modulesStr) {
+      const raw = modulesStr || 'NEURO';
+      const list = raw.split(',').map(m => m.trim().toUpperCase());
+      const badges = [];
+      if (list.includes('NEURO')) badges.push('<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="Neuro Electrophysiology">NEURO</span>');
+      if (list.includes('CLINICAL')) badges.push('<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Clinical Lab & Microscopy">CLINICAL</span>');
+      if (list.includes('PATHO')) badges.push('<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200" title="Pathology & Hematology">PATHO</span>');
+      if (list.includes('BIOCHEM')) badges.push('<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300" title="Clinical Biochemistry">BIOCHEM</span>');
+      return badges.length ? badges.join('') : '<span class="text-[10px] text-slate-400 italic">No modules</span>';
+    }
+
     function renderMasterTenantsTable(tenants) {
       const tbody = document.getElementById('master-tenants-tbody');
       if (!tbody) return;
 
       if (!tenants || !tenants.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No organizations registered. Click "+ Add Organization" to provision a new clinic.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">No organizations registered. Click "+ Add Organization" to provision a new clinic.</td></tr>`;
         return;
       }
 
@@ -4843,6 +5731,11 @@
                 'bg-rose-50 text-rose-700 border border-rose-200'
               }">${t.status || 'ACTIVE'}</span>
             </td>
+            <td class="py-3 px-3">
+              <div class="flex flex-wrap gap-1 max-w-[170px]">
+                ${renderModuleBadges(t.modules)}
+              </div>
+            </td>
             <td class="py-3 px-3 text-[11px]">
               <p class="font-bold text-slate-900">${t.admin_full_name || 'Clinic Director'}</p>
               <p class="font-mono text-slate-500 text-[10px]">${t.admin_username || 'admin'} • ${t.admin_email || 'admin@clinic.com'}</p>
@@ -4862,6 +5755,9 @@
               } font-bold text-[11px] transition">
                 ${t.status === 'ACTIVE' ? 'Hold' : 'Activate'}
               </button>
+              <button onclick="openMasterModulesModal('${t.id}')" title="Authorize Laboratory Modules" class="px-2.5 py-1 rounded bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold text-[11px] transition">
+                Modules
+              </button>
               <button onclick="openMasterEditTenantModal('${t.id}')" title="Edit organization details" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
                 Edit
               </button>
@@ -4880,6 +5776,54 @@
           </tr>
         `;
       }).join('');
+    }
+
+    function openMasterModulesModal(tenantId) {
+      const t = masterTenantsCache.find(x => x.id === tenantId);
+      if (!t) return;
+
+      document.getElementById('mmod-tenant-id').value = t.id;
+      document.getElementById('mmod-clinic-name').innerText = `${t.name} (${t.id})`;
+
+      const mods = (t.modules || 'NEURO').split(',').map(m => m.trim().toUpperCase());
+      document.getElementById('mmod-check-neuro').checked = mods.includes('NEURO');
+      document.getElementById('mmod-check-clinical').checked = mods.includes('CLINICAL');
+      document.getElementById('mmod-check-patho').checked = mods.includes('PATHO');
+      document.getElementById('mmod-check-biochem').checked = mods.includes('BIOCHEM');
+
+      const modal = document.getElementById('masterModulesModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeMasterModulesModal() {
+      const modal = document.getElementById('masterModulesModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function handleMasterSaveModules(e) {
+      if (e) e.preventDefault();
+      const id = document.getElementById('mmod-tenant-id').value;
+      const mods = [];
+      if (document.getElementById('mmod-check-neuro').checked) mods.push('NEURO');
+      if (document.getElementById('mmod-check-clinical').checked) mods.push('CLINICAL');
+      if (document.getElementById('mmod-check-patho').checked) mods.push('PATHO');
+      if (document.getElementById('mmod-check-biochem').checked) mods.push('BIOCHEM');
+
+      try {
+        const res = await fetch(`/api/master/tenants/${id}/modules`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ modules: mods })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to update modules.');
+
+        showToast("Laboratory module authorizations updated successfully!");
+        closeMasterModulesModal();
+        loadMasterTenants();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     }
 
     function filterMasterTenantsTable() {
@@ -4917,6 +5861,12 @@
       const adminUsername = document.getElementById('madd-admin-user').value.trim();
       const adminPassword = document.getElementById('madd-admin-pass').value.trim();
 
+      const modules = [];
+      if (document.getElementById('madd-mod-neuro')?.checked) modules.push('NEURO');
+      if (document.getElementById('madd-mod-clinical')?.checked) modules.push('CLINICAL');
+      if (document.getElementById('madd-mod-patho')?.checked) modules.push('PATHO');
+      if (document.getElementById('madd-mod-biochem')?.checked) modules.push('BIOCHEM');
+
       if (!name || !slug) return showToast("Facility Name and unique slug are required.", "error");
 
       try {
@@ -4924,7 +5874,8 @@
           name, slug, parentEntity, plan, address, phones,
           adminName: adminName || `${name} Director`,
           adminUsername: adminUsername || `admin.${slug}`,
-          adminPassword: adminPassword || 'Admin@123'
+          adminPassword: adminPassword || 'Admin@123',
+          modules: modules.join(',')
         };
 
         const res = await fetch('/api/master/tenants', {
@@ -4955,6 +5906,12 @@
       document.getElementById('medit-address').value = t.address || '';
       document.getElementById('medit-phones').value = t.phones || '';
 
+      const mods = (t.modules || 'NEURO,CLINICAL,PATHO,BIOCHEM').split(',').map(m => m.trim().toUpperCase());
+      if (document.getElementById('medit-mod-neuro')) document.getElementById('medit-mod-neuro').checked = mods.includes('NEURO');
+      if (document.getElementById('medit-mod-clinical')) document.getElementById('medit-mod-clinical').checked = mods.includes('CLINICAL');
+      if (document.getElementById('medit-mod-patho')) document.getElementById('medit-mod-patho').checked = mods.includes('PATHO');
+      if (document.getElementById('medit-mod-biochem')) document.getElementById('medit-mod-biochem').checked = mods.includes('BIOCHEM');
+
       const modal = document.getElementById('masterEditTenantModal');
       if (modal) modal.classList.remove('hidden');
     }
@@ -4974,11 +5931,17 @@
       const address = document.getElementById('medit-address').value.trim();
       const phones = document.getElementById('medit-phones').value.trim();
 
+      const modules = [];
+      if (document.getElementById('medit-mod-neuro')?.checked) modules.push('NEURO');
+      if (document.getElementById('medit-mod-clinical')?.checked) modules.push('CLINICAL');
+      if (document.getElementById('medit-mod-patho')?.checked) modules.push('PATHO');
+      if (document.getElementById('medit-mod-biochem')?.checked) modules.push('BIOCHEM');
+
       try {
         const res = await fetch(`/api/master/tenants/${id}`, {
           method: 'PUT',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ name, plan, status, parentEntity, address, phones })
+          body: JSON.stringify({ name, plan, status, parentEntity, address, phones, modules: modules.join(',') })
         });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Update failed.');
