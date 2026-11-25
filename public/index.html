@@ -3082,6 +3082,9 @@
       if (tabId === 'master-tenants' && userRole === 'SUPER_ADMIN') {
         loadMasterTenants();
       }
+      if (tabId === 'doctor') {
+        renderDoctorsDirectory();
+      }
 
       refreshAllViews();
     }
@@ -5099,18 +5102,18 @@
 
       tbody.innerHTML = appState.reportingDoctors.map((d, idx) => `
         <tr class="hover:bg-slate-50">
-          <td class="py-3 px-3 font-bold text-slate-900">${d.name}</td>
+          <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(d.name || '')}</td>
           <td class="py-3 px-3">
-            <p class="font-semibold text-slate-800">${d.designation}</p>
-            <p class="text-[10px] text-slate-500">${d.qualification} • ${d.department}</p>
+            <p class="font-semibold text-slate-800">${escapeHtml(d.designation || '')}</p>
+            <p class="text-[10px] text-slate-500">${escapeHtml(d.qualification || '')} ${d.department ? '• ' + escapeHtml(d.department) : ''}</p>
           </td>
-          <td class="py-3 px-3 font-mono text-slate-700">${d.regNo}</td>
+          <td class="py-3 px-3 font-mono text-slate-700">${escapeHtml(d.regNo || '')}</td>
           <td class="py-3 px-3 text-center">
             ${d.signatureUrl ? `<img src="${d.signatureUrl}" class="h-8 max-w-[100px] object-contain mx-auto" />` : '<span class="text-[10px] text-slate-400 italic">No Signature</span>'}
           </td>
           <td class="py-3 px-3 text-center space-x-2">
             <button onclick="openDoctorModal(${idx})" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">Edit</button>
-            <button onclick="deleteDoctor('${d.id || idx}', ${idx})" class="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs">Del</button>
+            <button onclick="deleteDoctor('${escapeHtml(d.id || '')}', ${idx})" class="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs">Del</button>
           </td>
         </tr>
       `).join('');
@@ -5119,16 +5122,17 @@
     function openDoctorModal(idx = -1) {
       const modal = document.getElementById('doctorModal');
       const title = document.getElementById('doctorModalTitle');
+      if (!modal) return;
       document.getElementById('doc-modal-index').value = idx;
 
-      if (idx >= 0) {
+      if (idx >= 0 && appState.reportingDoctors && appState.reportingDoctors[idx]) {
         const d = appState.reportingDoctors[idx];
         title.innerText = "Edit Reporting Consultant";
-        document.getElementById('doc-modal-name').value = d.name;
-        document.getElementById('doc-modal-desig').value = d.designation;
-        document.getElementById('doc-modal-qual').value = d.qualification;
-        document.getElementById('doc-modal-reg').value = d.regNo;
-        document.getElementById('doc-modal-dept').value = d.department;
+        document.getElementById('doc-modal-name').value = d.name || '';
+        document.getElementById('doc-modal-desig').value = d.designation || '';
+        document.getElementById('doc-modal-qual').value = d.qualification || '';
+        document.getElementById('doc-modal-reg').value = d.regNo || '';
+        document.getElementById('doc-modal-dept').value = d.department || '';
         document.getElementById('doc-modal-sig').value = d.signatureUrl || '';
         previewSigUrl(d.signatureUrl || '');
       } else {
@@ -5139,17 +5143,20 @@
       }
       setSigMode('upload');
       modal.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function closeDoctorModal() {
-      document.getElementById('doctorModal').classList.add('hidden');
+      const modal = document.getElementById('doctorModal');
+      if (modal) modal.classList.add('hidden');
     }
 
     async function handleSaveDoctorModal(e) {
       e.preventDefault();
       const idx = Number(document.getElementById('doc-modal-index').value);
+      const existingId = (idx >= 0 && appState.reportingDoctors && appState.reportingDoctors[idx]) ? appState.reportingDoctors[idx].id : null;
       const data = {
-        id: idx >= 0 ? appState.reportingDoctors[idx].id : 'DOC' + Date.now(),
+        id: existingId || ('DOC' + Date.now()),
         name: document.getElementById('doc-modal-name').value.trim(),
         designation: document.getElementById('doc-modal-desig').value.trim(),
         qualification: document.getElementById('doc-modal-qual').value.trim(),
@@ -5158,37 +5165,50 @@
         signatureUrl: document.getElementById('doc-modal-sig').value.trim()
       };
 
-      if (idx >= 0) {
+      if (!data.name) return showToast("Consultant name is required.", "error");
+
+      if (idx >= 0 && appState.reportingDoctors && appState.reportingDoctors[idx]) {
         appState.reportingDoctors[idx] = data;
-        showToast(`Consultant ${data.name} updated!`);
       } else {
         if (!appState.reportingDoctors) appState.reportingDoctors = [];
         appState.reportingDoctors.push(data);
-        showToast(`Consultant ${data.name} added to D1!`);
       }
 
       saveState();
       closeDoctorModal();
       refreshAllViews();
 
-      fetch('/api/doctors', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data)
-      }).catch(err => setCloudStatus('offline'));
+      try {
+        const res = await fetch('/api/doctors', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Cloud D1 sync failed');
+        showToast(idx >= 0 ? `Consultant ${data.name} updated in D1!` : `Consultant ${data.name} added to D1!`);
+      } catch (err) {
+        setCloudStatus('offline');
+        showToast(`Consultant ${data.name} saved locally (Cloud D1 unreachable).`, "error");
+      }
     }
 
     async function deleteDoctor(id, idx) {
-      if (appState.reportingDoctors.length <= 1) {
+      if (!appState.reportingDoctors || appState.reportingDoctors.length <= 1) {
         return showToast("You must maintain at least one reporting consultant.", "error");
       }
       if (!confirm("Are you sure you want to remove this reporting consultant?")) return;
-      appState.reportingDoctors.splice(idx, 1);
+      const removed = appState.reportingDoctors.splice(idx, 1)[0];
+      const docId = id || removed?.id;
       saveState();
       refreshAllViews();
 
-      if (id && String(id).startsWith('DOC')) {
-        fetch(`/api/doctors/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).catch(err => setCloudStatus('offline'));
+      if (docId) {
+        try {
+          const res = await fetch(`/api/doctors/${encodeURIComponent(docId)}`, { method: 'DELETE', headers: getAuthHeaders() });
+          if (!res.ok) throw new Error('Delete sync failed');
+        } catch (err) {
+          setCloudStatus('offline');
+        }
       }
       showToast("Reporting consultant removed.");
     }
@@ -5242,7 +5262,7 @@
 
       const patientMap = {};
       appState.patients.forEach(p => {
-        const isReporting = (p.reportingDoctor || appState.reportingDoctors[0]?.name).toLowerCase() === activeDocName.toLowerCase();
+        const isReporting = String(p.reportingDoctor || appState.reportingDoctors[0]?.name || '').toLowerCase() === activeDocName.toLowerCase();
         const ref = (p.refDoctor || '').toLowerCase();
         const doc = activeDocName.toLowerCase();
         const isReferral = ref === doc || ref.includes(doc) || doc.includes(ref);
@@ -5619,7 +5639,7 @@
 
       const patientMap = {};
       appState.patients.forEach(p => {
-        const isReporting = (p.reportingDoctor || appState.reportingDoctors[0]?.name).toLowerCase() === activeDocName.toLowerCase();
+        const isReporting = String(p.reportingDoctor || appState.reportingDoctors[0]?.name || '').toLowerCase() === activeDocName.toLowerCase();
         const ref = (p.refDoctor || '').toLowerCase();
         const doc = activeDocName.toLowerCase();
         const isReferral = ref === doc || ref.includes(doc) || doc.includes(ref);
