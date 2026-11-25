@@ -1290,7 +1290,7 @@
           </div>
 
           <!-- EEG REPORT CONTENT CONTAINER -->
-          <div id="rep-eeg-container" class="space-y-4 text-xs">
+          <div id="rep-eeg-container" class="space-y-4 text-xs" style="display: none;">
             <div class="text-center py-2 border-y-2 border-slate-900 my-2">
               <h3 id="rep-eeg-doc-title" class="font-black text-sm tracking-widest text-slate-950 uppercase">EEG REPORT</h3>
             </div>
@@ -1363,7 +1363,7 @@
           </div>
 
           <!-- NCS / EMG / OTHER MODALITY CONTENT CONTAINER -->
-          <div id="rep-ncs-container" class="space-y-4 text-xs">
+          <div id="rep-ncs-container" class="space-y-4 text-xs" style="display: none;">
             <div class="text-center py-2 border-y border-slate-200">
               <h3 id="rep-doc-title" class="font-black text-sm tracking-widest text-slate-900 uppercase">NERVE CONDUCTION STUDIES REPORT</h3>
             </div>
@@ -4741,6 +4741,12 @@
       const accessiblePatients = getAccessiblePatients();
       if (!accessiblePatients.length) {
         select.innerHTML = `<option value="">No patients assigned to you</option>`;
+        const eegBox = document.getElementById('rep-eeg-container');
+        const ncsBox = document.getElementById('rep-ncs-container');
+        const labBox = document.getElementById('rep-lab-container');
+        if (eegBox) eegBox.style.display = 'none';
+        if (ncsBox) ncsBox.style.display = 'none';
+        if (labBox) labBox.style.display = 'none';
         return;
       }
       if (!accessiblePatients.some(p => p.id === appState.selectedPatientForReport)) {
@@ -4783,7 +4789,15 @@
 
     function populateReportPreviewModal(id) {
       const p = appState.patients.find(x => x.id === id);
-      if (!p) return;
+      const eegBox = document.getElementById('rep-eeg-container');
+      const ncsBox = document.getElementById('rep-ncs-container');
+      const labBox = document.getElementById('rep-lab-container');
+      if (!p) {
+        if (eegBox) eegBox.style.display = 'none';
+        if (ncsBox) ncsBox.style.display = 'none';
+        if (labBox) labBox.style.display = 'none';
+        return;
+      }
       const st = appState.settings;
 
       document.getElementById('rep-header-name').innerText = st.facilityName;
@@ -4823,7 +4837,7 @@
       const tplConcern = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
 
       const isLabPatient = (tplConcern?.isLab || ['URINE_RM', 'STOOL_RE', 'SEMEN_ANALYSIS', 'BODY_FLUID', 'CBC', 'PBS', 'BG_RH', 'BT_CT', 'COAG_PROFILE', 'ESR', 'LFT', 'KFT', 'LIPID', 'BLOOD_SUGAR', 'HBA1C', 'THYROID_PROFILE', 'ELECTROLYTES'].includes(p.modality));
-      const isEegPatient = (!isLabPatient && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
+      const isEegPatient = (!isLabPatient && (String(p.modality || '').toUpperCase() === 'EEG' || (!p.modality && String(p.reportTitle || '').toUpperCase().includes('EEG'))));
 
       // Auto-heal uninitialized records when previewing
       if (isLabPatient && (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0)) {
@@ -4851,10 +4865,7 @@
       }
 
       const isLab = !!p.isLab || (Array.isArray(p.labResults) && p.labResults.length > 0);
-      const isEeg = (!isLab && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
-      const eegBox = document.getElementById('rep-eeg-container');
-      const ncsBox = document.getElementById('rep-ncs-container');
-      const labBox = document.getElementById('rep-lab-container');
+      const isEeg = (!isLab && (String(p.modality || '').toUpperCase() === 'EEG' || (!p.modality && String(p.reportTitle || '').toUpperCase().includes('EEG'))));
 
       if (isLab) {
         if (labBox) labBox.style.display = 'block';
