@@ -2751,6 +2751,7 @@
         if (!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
         if (data.ok && data.state) {
           const remote = data.state;
+          if (remote.tenant) appState.tenant = remote.tenant;
           if (remote.settings) appState.settings = remote.settings;
           if (remote.reportingDoctors && remote.reportingDoctors.length) appState.reportingDoctors = remote.reportingDoctors;
           if (remote.tariffs && Object.keys(remote.tariffs).length) appState.tariffs = remote.tariffs;
@@ -2763,9 +2764,14 @@
           saveState();
           setCloudStatus('connected', 'Cloudflare D1 Online');
           showToast('Synchronized with Cloudflare D1 Database!');
-          refreshAllViews();
+          try {
+            refreshAllViews();
+          } catch (uiErr) {
+            console.error('UI refresh notice after D1 sync:', uiErr);
+          }
           return;
         }
+        throw new Error(data?.error || 'Invalid D1 state response');
       } catch (err) {
         console.warn('Cloudflare D1 sync notice:', err);
         setCloudStatus('offline', 'Local Cache (Offline)');
@@ -3927,7 +3933,7 @@
       if (!tbody) return;
 
       const filtered = appState.patients.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(search) || String(p.token).includes(search) || (p.refDoctor || '').toLowerCase().includes(search);
+        const matchesSearch = (p.name || '').toLowerCase().includes(search) || String(p.token || '').includes(search) || (p.refDoctor || '').toLowerCase().includes(search);
         const matchesMod = modFilter === 'ALL' || p.modality === modFilter;
         return matchesSearch && matchesMod;
       });
