@@ -3792,6 +3792,7 @@
 
       if (tpl.isLab) {
         if (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0) return true;
+        if (String(p.impression || '').toLowerCase().includes('eps of sampled nerves')) return true;
         if (title && tpl.reportTitle && !title.includes(tpl.reportTitle.split(' - ')[1] || tpl.reportTitle)) {
           // e.g., LFT patient showing CBC report title
           const expectedWords = tpl.reportTitle.split(' - ').pop().split(' ')[0];
@@ -4695,7 +4696,10 @@
         document.getElementById('writer-sensory-findings').value = p.sensoryFindings || (isEegPatient ? "Artefacts +.     \n No abnormal Epileptiform discharges seen." : "Normal Latency, Amplitude and CV.");
         document.getElementById('writer-fwaves-findings').value = p.fwavesFindings || (isEegPatient ? "No abnormal epileptiform discharges seen." : "Normal minimum Latencies.");
       }
-      document.getElementById('writer-impression').value = p.impression || (isEegPatient ? "Normal Sleep and awake EEG Record" : "Findings within normal limits.");
+      const rawImp = String(p.impression || '');
+      document.getElementById('writer-impression').value = (isLab && rawImp.toLowerCase().includes('eps of sampled nerves'))
+        ? (tplConcern.impression || "Investigation findings within normal biological reference intervals.")
+        : (rawImp || (isEegPatient ? "Normal Sleep and awake EEG Record" : (isLab ? (tplConcern.impression || "Investigation findings within normal biological reference intervals.") : "Findings within normal limits.")));
     }
 
     function loadNcsTemplate(type) {
@@ -4986,7 +4990,11 @@
         }
 
         if (document.getElementById('rep-lab-impression-text')) {
-          document.getElementById('rep-lab-impression-text').innerText = p.impression || "Investigation findings within normal biological reference intervals.";
+          const rawImp = String(p.impression || '');
+          const safeImp = (!rawImp || rawImp.toLowerCase().includes('eps of sampled nerves'))
+            ? (tplConcern.impression || "Investigation findings within normal biological reference intervals.")
+            : rawImp;
+          document.getElementById('rep-lab-impression-text').innerText = safeImp;
         }
       } else if (isEeg) {
         if (labBox) labBox.style.display = 'none';
