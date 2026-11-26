@@ -3723,31 +3723,95 @@
       }
     };
 
+    const MODALITY_ALLOWED_PRESETS = {
+      NCV: ['normal', 'ulnar', 'cts'],
+      NCS: ['normal', 'ulnar', 'cts'],
+      EEG: ['eeg_normal', 'eeg_abnormal'],
+      EMG: ['emg_normal'],
+      RNST: ['rnst_normal'],
+      VEP: ['vep_normal'],
+      BERA: ['bera_normal'],
+      URINE_RM: ['urine_rm_normal', 'urine_rm_uti'],
+      BODY_FLUID: ['urine_rm_normal', 'urine_rm_uti'],
+      STOOL_RE: ['stool_re_normal'],
+      SEMEN_ANALYSIS: ['semen_normal'],
+      CBC: ['cbc_normal', 'cbc_anemia'],
+      PBS: ['cbc_normal', 'cbc_anemia'],
+      BG_RH: ['cbc_normal'],
+      ESR: ['cbc_normal'],
+      COAG_PROFILE: ['coag_normal'],
+      BT_CT: ['coag_normal'],
+      LFT: ['lft_normal', 'lft_hepatitis'],
+      KFT: ['kft_normal'],
+      ELECTROLYTES: ['kft_normal'],
+      LIPID: ['lipid_normal'],
+      BLOOD_SUGAR: ['diabetic_normal'],
+      HBA1C: ['diabetic_normal'],
+      THYROID_PROFILE: ['thyroid_normal']
+    };
+
     function getConcernTemplateKeyForPatient(p) {
       if (!p) return 'normal';
+      const mod = String(p.modality || '').toUpperCase().trim();
+      const allowedForMod = MODALITY_ALLOWED_PRESETS[mod];
       if (p.templatePreset && MODALITY_TEMPLATES[p.templatePreset]) {
-        return p.templatePreset;
+        if (!allowedForMod || allowedForMod.includes(p.templatePreset)) {
+          return p.templatePreset;
+        }
       }
-      const mod = String(p.modality || '').toUpperCase();
+      if (allowedForMod && allowedForMod.length > 0) {
+        return allowedForMod[0];
+      }
+
+      const title = String(p.reportTitle || '').toUpperCase();
+      if (mod === 'EEG' || (!mod && title.includes('EEG'))) return 'eeg_normal';
+      if (mod === 'EMG' || (!mod && title.includes('EMG'))) return 'emg_normal';
+      if (mod === 'RNST' || (!mod && title.includes('RNST'))) return 'rnst_normal';
+      if (mod === 'VEP' || (!mod && title.includes('VEP'))) return 'vep_normal';
+      if (mod === 'BERA' || (!mod && title.includes('BERA'))) return 'bera_normal';
+      if (mod === 'URINE_RM' || (!mod && title.includes('URINE'))) return 'urine_rm_normal';
+      if (mod === 'STOOL_RE' || (!mod && title.includes('STOOL'))) return 'stool_re_normal';
+      if (mod === 'SEMEN_ANALYSIS' || (!mod && title.includes('SEMEN'))) return 'semen_normal';
+      if (mod === 'BODY_FLUID' || (!mod && title.includes('FLUID'))) return 'urine_rm_normal';
+      if (mod === 'CBC' || mod === 'PBS' || mod === 'BG_RH' || mod === 'ESR' || (!mod && (title.includes('CBC') || title.includes('BLOOD COUNT') || title.includes('HEMATOLOGY')))) return 'cbc_normal';
+      if (mod === 'COAG_PROFILE' || mod === 'BT_CT' || (!mod && (title.includes('COAG') || title.includes('PROTHROMBIN')))) return 'coag_normal';
+      if (mod === 'LFT' || (!mod && (title.includes('LIVER') || title.includes('LFT')))) return 'lft_normal';
+      if (mod === 'KFT' || mod === 'ELECTROLYTES' || (!mod && (title.includes('KIDNEY') || title.includes('KFT') || title.includes('RFT')))) return 'kft_normal';
+      if (mod === 'LIPID' || (!mod && title.includes('LIPID'))) return 'lipid_normal';
+      if (mod === 'BLOOD_SUGAR' || mod === 'HBA1C' || (!mod && (title.includes('SUGAR') || title.includes('GLUCOSE') || title.includes('HBA1C') || title.includes('DIABETIC')))) return 'diabetic_normal';
+      if (mod === 'THYROID_PROFILE' || (!mod && (title.includes('THYROID') || title.includes('TFT')))) return 'thyroid_normal';
+      return 'normal';
+    }
+
+    function hasModalityTemplateMismatch(p) {
+      if (!p) return false;
+      const concernKey = getConcernTemplateKeyForPatient(p);
+      const tpl = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
+      const mod = String(p.modality || '').toUpperCase().trim();
       const title = String(p.reportTitle || '').toUpperCase();
 
-      if (mod === 'EEG' || title.includes('EEG')) return 'eeg_normal';
-      if (mod === 'EMG' || title.includes('EMG')) return 'emg_normal';
-      if (mod === 'RNST' || title.includes('RNST')) return 'rnst_normal';
-      if (mod === 'VEP' || title.includes('VEP')) return 'vep_normal';
-      if (mod === 'BERA' || title.includes('BERA')) return 'bera_normal';
-      if (mod === 'URINE_RM' || title.includes('URINE')) return 'urine_rm_normal';
-      if (mod === 'STOOL_RE' || title.includes('STOOL')) return 'stool_re_normal';
-      if (mod === 'SEMEN_ANALYSIS' || title.includes('SEMEN')) return 'semen_normal';
-      if (mod === 'BODY_FLUID' || title.includes('FLUID')) return 'urine_rm_normal';
-      if (mod === 'CBC' || mod === 'PBS' || mod === 'BG_RH' || mod === 'ESR' || title.includes('CBC') || title.includes('BLOOD COUNT') || title.includes('HEMATOLOGY')) return 'cbc_normal';
-      if (mod === 'COAG_PROFILE' || mod === 'BT_CT' || title.includes('COAG') || title.includes('PROTHROMBIN')) return 'coag_normal';
-      if (mod === 'LFT' || title.includes('LIVER') || title.includes('LFT')) return 'lft_normal';
-      if (mod === 'KFT' || mod === 'ELECTROLYTES' || title.includes('KIDNEY') || title.includes('KFT') || title.includes('RFT')) return 'kft_normal';
-      if (mod === 'LIPID' || title.includes('LIPID')) return 'lipid_normal';
-      if (mod === 'BLOOD_SUGAR' || mod === 'HBA1C' || title.includes('SUGAR') || title.includes('GLUCOSE') || title.includes('HBA1C') || title.includes('DIABETIC')) return 'diabetic_normal';
-      if (mod === 'THYROID_PROFILE' || title.includes('THYROID') || title.includes('TFT')) return 'thyroid_normal';
-      return 'normal';
+      if (tpl.isLab) {
+        if (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0) return true;
+        if (title && tpl.reportTitle && !title.includes(tpl.reportTitle.split(' - ')[1] || tpl.reportTitle)) {
+          // e.g., LFT patient showing CBC report title
+          const expectedWords = tpl.reportTitle.split(' - ').pop().split(' ')[0];
+          if (expectedWords && !title.includes(expectedWords)) return true;
+        }
+        return false;
+      } else {
+        if (p.isLab) return true;
+        if (!p.motorFindings && !p.impression) return true;
+        if (mod === 'EEG') {
+          return !title.includes('EEG') || p.motorFindings === 'Normal DML, CMAP and CV.' || p.motorSampled === 'Bilateral Median and Ulnar nerves.';
+        }
+        if (mod === 'NCV' || mod === 'NCS') {
+          return title.includes('EEG') || title.includes('EMG') || title.includes('VEP') || title.includes('BERA') || title.includes('RNST') || String(p.motorSampled || '').includes('10-20');
+        }
+        if (['EMG', 'RNST', 'VEP', 'BERA'].includes(mod)) {
+          return !title.includes(mod) || p.motorFindings === 'Normal DML, CMAP and CV.' || String(p.motorSampled || '').includes('Bilateral Median and Ulnar') || String(p.motorSampled || '').includes('10-20');
+        }
+        return false;
+      }
     }
 
     function handleModalityOrRefChange() {
@@ -4586,13 +4650,9 @@
       const tplConcern = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
 
       const isLabPatient = (tplConcern.isLab || ['URINE_RM', 'STOOL_RE', 'SEMEN_ANALYSIS', 'BODY_FLUID', 'CBC', 'PBS', 'BG_RH', 'BT_CT', 'COAG_PROFILE', 'ESR', 'LFT', 'KFT', 'LIPID', 'BLOOD_SUGAR', 'HBA1C', 'THYROID_PROFILE', 'ELECTROLYTES'].includes(p.modality));
-      const isEegPatient = (!isLabPatient && (p.modality === 'EEG' || String(p.reportTitle || '').toUpperCase().includes('EEG')));
+      const isEegPatient = (!isLabPatient && (String(p.modality || '').toUpperCase() === 'EEG' || (!p.modality && String(p.reportTitle || '').toUpperCase().includes('EEG'))));
 
-      const isUninitializedLab = isLabPatient && (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0);
-      const isUninitializedEeg = isEegPatient && (p.motorFindings === 'Normal DML, CMAP and CV.' || p.motorSampled === 'Bilateral Median and Ulnar nerves.' || !p.motorFindings);
-      const hasNoFindings = !p.motorFindings && !p.labResults && !p.impression;
-
-      if (forceConcern || isUninitializedLab || isUninitializedEeg || hasNoFindings) {
+      if (forceConcern || hasModalityTemplateMismatch(p)) {
         loadNcsTemplate(concernKey);
         return;
       }
@@ -4850,32 +4910,31 @@
       const concernKey = getConcernTemplateKeyForPatient(p);
       const tplConcern = MODALITY_TEMPLATES[concernKey] || MODALITY_TEMPLATES.normal;
 
-      const isLabPatient = (tplConcern?.isLab || ['URINE_RM', 'STOOL_RE', 'SEMEN_ANALYSIS', 'BODY_FLUID', 'CBC', 'PBS', 'BG_RH', 'BT_CT', 'COAG_PROFILE', 'ESR', 'LFT', 'KFT', 'LIPID', 'BLOOD_SUGAR', 'HBA1C', 'THYROID_PROFILE', 'ELECTROLYTES'].includes(p.modality));
-      const isEegPatient = (!isLabPatient && (String(p.modality || '').toUpperCase() === 'EEG' || (!p.modality && String(p.reportTitle || '').toUpperCase().includes('EEG'))));
-
-      // Auto-heal uninitialized records when previewing
-      if (isLabPatient && (!p.isLab || !Array.isArray(p.labResults) || p.labResults.length === 0)) {
-        p.isLab = true;
-        p.labMethod = tplConcern.labMethod || '';
-        p.labCategory = tplConcern.labCategory || '';
-        p.labResults = JSON.parse(JSON.stringify(tplConcern.labParams || []));
-        p.labNotes = tplConcern.notes || '';
-        p.reportTitle = tplConcern.reportTitle;
-        p.impression = p.impression || tplConcern.impression || '';
-      } else if (isEegPatient && (p.motorFindings === 'Normal DML, CMAP and CV.' || p.motorSampled === 'Bilateral Median and Ulnar nerves.' || !p.motorFindings)) {
-        p.isLab = false;
-        p.reportTitle = tplConcern.reportTitle;
-        p.lblParam1 = tplConcern.lblParam1;
-        p.lblParam2 = tplConcern.lblParam2;
-        p.lblSec1 = tplConcern.lblSec1;
-        p.lblSec2 = tplConcern.lblSec2;
-        p.lblSec3 = tplConcern.lblSec3;
-        p.motorSampled = tplConcern.motorSampled;
-        p.sensorySampled = tplConcern.sensorySampled;
-        p.motorFindings = tplConcern.motorFindings;
-        p.sensoryFindings = tplConcern.sensoryFindings;
-        p.fwavesFindings = tplConcern.fwavesFindings;
-        p.impression = p.impression || tplConcern.impression;
+      // Auto-heal mismatched or uninitialized records when previewing
+      if (hasModalityTemplateMismatch(p)) {
+        if (tplConcern.isLab) {
+          p.isLab = true;
+          p.labMethod = tplConcern.labMethod || '';
+          p.labCategory = tplConcern.labCategory || '';
+          p.labResults = JSON.parse(JSON.stringify(tplConcern.labParams || []));
+          p.labNotes = tplConcern.notes || '';
+          p.reportTitle = tplConcern.reportTitle;
+          p.impression = tplConcern.impression || '';
+        } else {
+          p.isLab = false;
+          p.reportTitle = tplConcern.reportTitle;
+          p.lblParam1 = tplConcern.lblParam1 || '';
+          p.lblParam2 = tplConcern.lblParam2 || '';
+          p.lblSec1 = tplConcern.lblSec1 || '';
+          p.lblSec2 = tplConcern.lblSec2 || '';
+          p.lblSec3 = tplConcern.lblSec3 || '';
+          p.motorSampled = tplConcern.motorSampled || '';
+          p.sensorySampled = tplConcern.sensorySampled || '';
+          p.motorFindings = tplConcern.motorFindings || '';
+          p.sensoryFindings = tplConcern.sensoryFindings || '';
+          p.fwavesFindings = tplConcern.fwavesFindings || '';
+          p.impression = tplConcern.impression || '';
+        }
       }
 
       const isLab = !!p.isLab || (Array.isArray(p.labResults) && p.labResults.length > 0);
