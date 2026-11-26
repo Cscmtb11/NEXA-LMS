@@ -1410,6 +1410,7 @@
               <p class="font-bold text-slate-900 text-xs">Reported By:-</p>
               <p id="rep-doc-signature-name" class="font-black text-sm text-slate-950">Dr Rayees Ahmad Tarray</p>
               <p id="rep-doc-signature-title" class="text-[11px] font-semibold text-slate-700 whitespace-pre-line">MBBS, MD (Internal Medicine)&#10;DM Neurology (SKIMS Soura)</p>
+              <p id="rep-doc-signature-reg" class="text-[10px] font-mono text-slate-600"></p>
               <div id="rep-signature-image-container" class="h-16 flex items-end justify-start pt-1"></div>
             </div>
             <div class="text-right space-y-0.5 text-[10px] text-slate-500 font-semibold italic">
@@ -4818,9 +4819,9 @@
 
       const activeDoc = (appState.reportingDoctors || []).find(d => d.name === (p.reportingDoctor || '')) || appState.reportingDoctors[0] || { name: 'Dr. Rayees Ahmad Tarray', designation: 'Consultant Neurologist', qualification: 'DM Neurology', regNo: 'JKMC-REG-2026', signatureUrl: '' };
 
-      document.getElementById('rep-doc-signature-name').innerText = activeDoc.name;
-      document.getElementById('rep-doc-signature-title').innerText = `${activeDoc.designation || ''} (${activeDoc.qualification || ''})`;
-      document.getElementById('rep-doc-signature-reg').innerText = `Reg No: ${activeDoc.regNo || ''}`;
+      if (document.getElementById('rep-doc-signature-name')) document.getElementById('rep-doc-signature-name').innerText = activeDoc.name;
+      if (document.getElementById('rep-doc-signature-title')) document.getElementById('rep-doc-signature-title').innerText = `${activeDoc.designation || ''} (${activeDoc.qualification || ''})`;
+      if (document.getElementById('rep-doc-signature-reg')) document.getElementById('rep-doc-signature-reg').innerText = `Reg No: ${activeDoc.regNo || ''}`;
 
       const sigContainer = document.getElementById('rep-signature-image-container');
       if (sigContainer) {
@@ -5615,9 +5616,24 @@
           const parsed = JSON.parse(evt.target.result);
           const stateToRestore = parsed.state || parsed;
           if (stateToRestore && (stateToRestore.patients || stateToRestore.settings)) {
-            appState = stateToRestore;
+            appState = {
+              ...appState,
+              ...stateToRestore,
+              patients: Array.isArray(stateToRestore.patients) ? stateToRestore.patients : (appState.patients || []),
+              reportingDoctors: Array.isArray(stateToRestore.reportingDoctors) ? stateToRestore.reportingDoctors : (appState.reportingDoctors || []),
+              referralPartners: Array.isArray(stateToRestore.referralPartners) ? stateToRestore.referralPartners : (appState.referralPartners || []),
+              referralPayouts: Array.isArray(stateToRestore.referralPayouts) ? stateToRestore.referralPayouts : (appState.referralPayouts || []),
+              ledgerEntries: Array.isArray(stateToRestore.ledgerEntries) ? stateToRestore.ledgerEntries : (appState.ledgerEntries || []),
+              expenses: Array.isArray(stateToRestore.expenses) ? stateToRestore.expenses : (appState.expenses || []),
+              tariffs: stateToRestore.tariffs || appState.tariffs || {},
+              settings: stateToRestore.settings || appState.settings || {}
+            };
             saveState();
-            refreshAllViews();
+            try {
+              refreshAllViews();
+            } catch (uiErr) {
+              console.warn('UI refresh notice after backup restore:', uiErr);
+            }
             showToast("Restoring workstation vault & syncing to Cloudflare D1...");
             const synced = await pushFullLocalStateToD1(appState);
             if (synced) {
@@ -5628,6 +5644,8 @@
           }
         } catch (err) {
           showToast("Error parsing JSON backup: " + err.message, "error");
+        } finally {
+          e.target.value = '';
         }
       };
       reader.readAsText(file);
