@@ -2802,7 +2802,11 @@
           if (data.state) {
             appState = data.state;
             saveState();
-            refreshAllViews();
+            try {
+              refreshAllViews();
+            } catch (uiErr) {
+              console.warn('UI refresh notice after D1 push:', uiErr);
+            }
           }
           showToast(data.message || 'Workstation records securely mirrored to Cloudflare D1!', 'success');
           return true;
