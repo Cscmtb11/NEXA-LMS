@@ -3380,12 +3380,12 @@
       eeg_normal: {
         reportTitle: "EEG REPORT",
         lblParam1: "Technique & Provocative Procedures:",
-        lblParam2: "Reactivity & State:",
+        lblParam2: "Recording State / Notes:",
         lblSec1: "BACKGROUND ACTIVITY:",
-        lblSec2: "REACTIVITY & ARTEFACTS:",
+        lblSec2: "ARTEFACTS & TRANSIENTS:",
         lblSec3: "EPILEPTIFORM / ABNORMAL DISCHARGES:",
         motorSampled: "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures",
-        sensorySampled: "Reactivity. +",
+        sensorySampled: "",
         motorFindings: "Background: slow background with sleep markers like vertex waves and sleep spindles. In later part there is hypnagogic hyper synchrony followed by brief alpha background.",
         sensoryFindings: "Artefacts +.     \n No abnormal Epileptiform discharges seen.",
         fwavesFindings: "No abnormal epileptiform discharges seen.",
@@ -3394,12 +3394,12 @@
       eeg_abnormal: {
         reportTitle: "EEG REPORT",
         lblParam1: "Technique & Provocative Procedures:",
-        lblParam2: "Reactivity & State:",
+        lblParam2: "Recording State / Notes:",
         lblSec1: "BACKGROUND ACTIVITY:",
-        lblSec2: "REACTIVITY & ARTEFACTS:",
+        lblSec2: "ARTEFACTS & TRANSIENTS:",
         lblSec3: "EPILEPTIFORM / ABNORMAL DISCHARGES:",
         motorSampled: "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures",
-        sensorySampled: "Reactivity. +",
+        sensorySampled: "",
         motorFindings: "Mild diffuse background slowing with disorganized posterior rhythm.",
         sensoryFindings: "Frequent high-amplitude generalized spike-wave complexes and focal sharp waves.",
         fwavesFindings: "Epileptiform discharges augmented during photic stimulation.",
@@ -4677,9 +4677,9 @@
 
         if (isEegPatient) {
           document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Technique & Provocative Procedures:";
-          document.getElementById('lbl-writer-param2').innerText = p.lblParam2 || "Reactivity & State:";
+          document.getElementById('lbl-writer-param2').innerText = (p.lblParam2 && p.lblParam2 !== 'Reactivity & State:') ? p.lblParam2 : "Recording State / Notes:";
           document.getElementById('lbl-writer-sec1').innerText = p.lblSec1 || "BACKGROUND ACTIVITY:";
-          document.getElementById('lbl-writer-sec2').innerText = p.lblSec2 || "REACTIVITY & ARTEFACTS:";
+          document.getElementById('lbl-writer-sec2').innerText = (p.lblSec2 && p.lblSec2 !== 'REACTIVITY & ARTEFACTS:') ? p.lblSec2 : "ARTEFACTS & TRANSIENTS:";
           document.getElementById('lbl-writer-sec3').innerText = p.lblSec3 || "EPILEPTIFORM / ABNORMAL DISCHARGES:";
         } else {
           document.getElementById('lbl-writer-param1').innerText = p.lblParam1 || "Motor Nerves Sampled:";
@@ -4690,7 +4690,7 @@
         }
 
         document.getElementById('writer-motor-sampled').value = p.motorSampled || (isEegPatient ? "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures" : "Bilateral Median and Ulnar nerves.");
-        document.getElementById('writer-sensory-sampled').value = p.sensorySampled || (isEegPatient ? "Reactivity. +" : "Bilateral Median and Ulnar nerves.");
+        document.getElementById('writer-sensory-sampled').value = isEegPatient ? ((p.sensorySampled && p.sensorySampled !== 'Reactivity. +') ? p.sensorySampled : '') : (p.sensorySampled || "Bilateral Median and Ulnar nerves.");
         document.getElementById('writer-motor-findings').value = p.motorFindings || (isEegPatient ? "Background: slow background with sleep markers like vertex waves and sleep spindles. In later part there is hypnagogic hyper synchrony followed by brief alpha background." : "Normal DML, CMAP and CV.");
         document.getElementById('writer-sensory-findings').value = p.sensoryFindings || (isEegPatient ? "Artefacts +.     \n No abnormal Epileptiform discharges seen." : "Normal Latency, Amplitude and CV.");
         document.getElementById('writer-fwaves-findings').value = p.fwavesFindings || (isEegPatient ? "No abnormal epileptiform discharges seen." : "Normal minimum Latencies.");
@@ -4996,7 +4996,12 @@
         if (document.getElementById('rep-eeg-doc-title')) document.getElementById('rep-eeg-doc-title').innerText = p.reportTitle || "EEG REPORT";
         if (document.getElementById('rep-eeg-protocol')) document.getElementById('rep-eeg-protocol').innerText = p.motorSampled || "Video EEG Record Done using 10-20 International system of electrode placement IPs & HV used as provocative procedures";
         if (document.getElementById('rep-eeg-background')) document.getElementById('rep-eeg-background').innerText = p.motorFindings || "Background: slow background with sleep markers like vertex waves and sleep spindles. In later part there is hypnagogic hyper synchrony followed by brief alpha background.";
-        if (document.getElementById('rep-eeg-reactivity')) document.getElementById('rep-eeg-reactivity').innerText = p.sensorySampled || "Reactivity. +";
+        if (document.getElementById('rep-eeg-reactivity')) {
+          const rEl = document.getElementById('rep-eeg-reactivity');
+          const rVal = (p.sensorySampled && p.sensorySampled !== 'Reactivity. +' && p.sensorySampled !== 'Bilateral Median and Ulnar nerves.') ? p.sensorySampled : '';
+          rEl.innerText = rVal;
+          rEl.style.display = rVal ? '' : 'none';
+        }
         if (document.getElementById('rep-eeg-artefacts')) document.getElementById('rep-eeg-artefacts').innerText = p.sensoryFindings || "Artefacts +.     \n No abnormal Epileptiform discharges seen.";
         if (document.getElementById('rep-eeg-discharges')) {
           const disc = p.fwavesFindings && p.fwavesFindings !== 'Normal minimum Latencies.' ? p.fwavesFindings : '';
