@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexa-LMIS | Al-Jawahira Electrophysiology Clinical Workstation (Cloudflare D1)</title>
+  <title>Nexa-LMIS | Clinical Diagnostic Workstation</title>
   
   <!-- Cloudflare Security Policy Compliance -->
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -263,7 +263,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 id="topbar-facility-title" class="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">AL JAWAHIRA ELECTROPHYSIOLOGY</h1>
-            <span id="topbar-d1-status" class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            <span id="topbar-d1-status" style="display: none;" class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> D1 Syncing
             </span>
           </div>
@@ -6640,7 +6640,7 @@
       if (modEl) modEl.innerText = `${patient.modality} Study`;
       if (payEl) payEl.innerText = patient.payMode || 'UPI / QR Scan';
       if (feeEl) feeEl.innerText = `₹${Number(patient.fee || 0).toLocaleString('en-IN')}`;
-      if (stampEl) stampEl.innerText = `Cloudflare D1 Ref: ${patient.id || 'NEXA-REC'} • Verified`;
+      if (stampEl) stampEl.innerText = `Ref: ${patient.id || 'NEXA-REC'} • Verified`;
     }
 
     function printPatientReceipt(patientId) {
