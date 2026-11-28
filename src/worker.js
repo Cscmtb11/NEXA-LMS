@@ -1057,6 +1057,83 @@ export default {
         return jsonResponse({ ok: true, id, message: `Operator ${username} registered successfully.` }, 201);
       }
 
+      // PUT /api/users/:id - Update Staff User (Admin Only for current tenant)
+      if (url.pathname.startsWith('/api/users/') && request.method === 'PUT') {
+        const currentUser = await authenticateUser(request, env.DB);
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+          return jsonResponse({ error: 'Administrator privilege required to modify users.' }, 403);
+        }
+
+        const id = url.pathname.split('/')[3];
+        const tenantId = resolveTenantId(request, currentUser);
+        let body;
+        try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON body' }, 400); }
+
+        const existing = await env.DB.prepare(
+          "SELECT id, tenant_id, username, email, full_name, role, status FROM users WHERE id = ? AND tenant_id = ?"
+        ).bind(id, tenantId).first();
+
+        if (!existing) {
+          return jsonResponse({ error: 'User account not found in this organization.' }, 404);
+        }
+
+        const username = String(body.username || existing.username).trim().toLowerCase();
+        const email = String(body.email || existing.email).trim().toLowerCase();
+        const fullName = String(body.fullName || existing.full_name).trim();
+        let role = String(body.role || existing.role).toUpperCase();
+        let status = String(body.status || existing.status || 'ACTIVE').toUpperCase();
+        const newPassword = String(body.password || '').trim();
+
+        if (!username || !email || !fullName) {
+          return jsonResponse({ error: 'User ID / Username, Email, and Full Name are required.' }, 400);
+        }
+        if (!['ADMIN', 'DOCTOR', 'RECEPTION', 'RECEPTIONIST', 'TECHNICIAN'].includes(role)) {
+          return jsonResponse({ error: 'Invalid role specified.' }, 400);
+        }
+        if (!['ACTIVE', 'INACTIVE', 'SUSPENDED'].includes(status)) {
+          status = 'ACTIVE';
+        }
+
+        // Prevent locking out primary admin or self
+        if (id === currentUser.id || id === 'USR_ADMIN') {
+          role = 'ADMIN';
+          status = 'ACTIVE';
+        }
+
+        // Check uniqueness against other users
+        const conflict = await env.DB.prepare(
+          "SELECT id FROM users WHERE (lower(username) = ? OR lower(email) = ?) AND id != ?"
+        ).bind(username, email, id).first();
+        if (conflict) {
+          return jsonResponse({ error: 'Another account already uses that Username or Email.' }, 409);
+        }
+
+        if (newPassword) {
+          if (newPassword.length < 6) {
+            return jsonResponse({ error: 'New password must be at least 6 characters.' }, 400);
+          }
+          const salt = 'salt_' + crypto.randomUUID().slice(0, 8);
+          const passwordHash = await hashPassword(newPassword, salt);
+          await env.DB.prepare(`
+            UPDATE users
+            SET username = ?, email = ?, full_name = ?, role = ?, status = ?, password_hash = ?, password_salt = ?
+            WHERE id = ? AND tenant_id = ?
+          `).bind(username, email, fullName, role, status, passwordHash, salt, id, tenantId).run();
+        } else {
+          await env.DB.prepare(`
+            UPDATE users
+            SET username = ?, email = ?, full_name = ?, role = ?, status = ?
+            WHERE id = ? AND tenant_id = ?
+          `).bind(username, email, fullName, role, status, id, tenantId).run();
+        }
+
+        return jsonResponse({
+          ok: true,
+          user: { id, username, email, fullName, role, status },
+          message: `Operator ${fullName} updated successfully!`
+        });
+      }
+
       // DELETE /api/users/:id - Delete Staff User (Admin Only)
       if (url.pathname.startsWith('/api/users/') && request.method === 'DELETE') {
         const currentUser = await authenticateUser(request, env.DB);
